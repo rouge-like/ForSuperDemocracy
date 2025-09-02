@@ -1,0 +1,14 @@
+{
+    "Version": "1.2",
+    "Data": {
+        "Source": "c:\\users\\user\\documents\\github\\forsuperdemocracy\\forsuperdemocracy\\intermediate\\build\\win64\\x64\\unrealeditor\\development\\forsuperdemocracy\\permoduleinline.gen.cpp",
+        "ProvidedModule": "",
+        "PCH": "c:\\users\\user\\documents\\github\\forsuperdemocracy\\forsuperdemocracy\\intermediate\\build\\win64\\x64\\forsuperdemocracyeditor\\development\\unrealed\\sharedpch.unrealed.project.valapi.valexpapi.cpp20.h.pch",
+        "Includes": [
+            "c:\\users\\user\\documents\\github\\forsuperdemocracy\\forsuperdemocracy\\intermediate\\build\\win64\\x64\\unrealeditor\\development\\forsuperdemocracy\\definitions.forsuperdemocracy.h",
+            "c:\\program files\\epic games\\ue_5.6\\engine\\source\\runtime\\core\\public\\hal\\permoduleinline.inl"
+        ],
+        "ImportedModules": [],
+        "ImportedHeaderUnits": []
+    }
+}

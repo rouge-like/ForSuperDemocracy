@@ -1,0 +1,14 @@
+{
+	"Targets": [
+		{
+			"Name": "ForSuperDemocracy",
+			"Path": "..\\Source\\ForSuperDemocracy.Target.cs",
+			"Type": "Game"
+		},
+		{
+			"Name": "ForSuperDemocracyEditor",
+			"Path": "..\\Source\\ForSuperDemocracyEditor.Target.cs",
+			"Type": "Editor"
+		}
+	]
+}
