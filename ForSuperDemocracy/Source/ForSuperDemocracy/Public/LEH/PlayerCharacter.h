@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+
 #include "PlayerCharacter.generated.h"
 
 UCLASS()
@@ -28,6 +29,12 @@ public:
 
 public:
 	// Components
+	UPROPERTY(VisibleAnywhere)
+	class USpringArmComponent* SpringArm;
 	
-	
+	UPROPERTY(VisibleAnywhere)
+	class UCameraComponent* Camera;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = FSMComponent)
+	class UPlayerFSM* FSM;
 };
