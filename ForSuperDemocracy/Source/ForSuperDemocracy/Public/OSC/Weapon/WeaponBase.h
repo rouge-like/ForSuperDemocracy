@@ -4,10 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "WeaponData.h"
 #include "WeaponBase.generated.h"
 
+
 class USkeletalMeshComponent;
-class UWeaponData;
 class UWeaponComponent;
 
 UCLASS()
@@ -27,7 +28,7 @@ protected:
     TObjectPtr<USkeletalMeshComponent> Mesh;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Weapon")
-    TObjectPtr<UWeaponData> data;
+    TObjectPtr<UWeaponData> Data;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Weapon")
     FName MuzzleSocketName = TEXT("attach_muzzle");
@@ -38,10 +39,12 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Weapon")
     bool bUseOwnerView = true;
 
-    int32 currentAmmo = 0;
+    int32 CurrentAmmo = 0;
     bool bIsReloading = false;
     bool bIsFiring = false;
-    float firingTime = 0.f;
+    UPROPERTY(BlueprintReadOnly)
+    bool bIsAiming = false;
+    float FiringTime = 0.f;
 
     FTimerHandle TimerHandle_Reload;
 
@@ -54,15 +57,32 @@ protected:
     void EndReload();
     
     void ShowBullet() const;
+
+    UPROPERTY()
+    TObjectPtr<UWeaponComponent> WC;
+
+    UPROPERTY(EditDefaultsOnly)
+    FAimViewParams AimViewParams;
+
+    void UpdateAimAlignment();
+
+    UPROPERTY()
+    TObjectPtr<AActor> Target;
+
+    UPROPERTY(BlueprintReadOnly)
+    FVector TargetWS;
 public:	
     // Called every frame
     virtual void Tick(float DeltaTime) override;
 
+    void RegisterWeaponComponent(UWeaponComponent* wc);
     void StartFire();
     void StopFire();
     void StartReload();
 
     UFUNCTION(BlueprintCallable, Category="Weapon")
-    int32 GetCurrentAmmo() const { return currentAmmo; }
+    int32 GetCurrentAmmo() const { return CurrentAmmo; }
     
+    const FAimViewParams& GetAimViewParams() const { return AimViewParams; }
+    void SetAiming(bool aiming) { bIsAiming = aiming; }
 };

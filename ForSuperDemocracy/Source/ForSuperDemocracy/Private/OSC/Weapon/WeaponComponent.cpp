@@ -1,8 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "OSC/Weapon/WeaponComponent.h"
-#include "OSC/Weapon/WeaponData.h"
-#include "OSC/Weapon/AmmoType.h"
 #include "OSC/Weapon/WeaponBase.h"
 #include "Components/ChildActorComponent.h"
 
@@ -39,9 +37,9 @@ void UWeaponComponent::BeginPlay()
                 }
             }
         }
-        if (weaponList.Num() > 0)
+        if (WeaponList.Num() > 0)
         {
-            currentIdx = 0;
+            CurrentIdx = 0;
         }
     }
 }
@@ -59,33 +57,35 @@ void UWeaponComponent::Equip(int32 idx)
 {
 	StopFire();
 	
-	currentIdx = idx;
+	CurrentIdx = idx;
 }
 
 void UWeaponComponent::StartFire()
 {
-	weaponList[currentIdx]->StartFire();
+	if (!bIsAiming)
+		return;
+	
+	WeaponList[CurrentIdx]->StartFire();
 }
 
 void UWeaponComponent::StopFire()
 {
-	weaponList[currentIdx]->StopFire();
+	WeaponList[CurrentIdx]->StopFire();
 }
 
 void UWeaponComponent::Reload()
 {
-	weaponList[currentIdx]->StartReload();
+	WeaponList[CurrentIdx]->StartReload();
 }
 
 int32 UWeaponComponent::PullAmmo(EAmmoType type, int32 need)
 {
-    int32* poolPtr = AmmoPools.Find(type);
-    int32& pool = poolPtr ? * poolPtr : AmmoPools.Add(type, 0);
+    int32& pool = AmmoPools.FindOrAdd(type);
     const int32 give = FMath::Clamp(need, 0, pool);
-	
-	pool -= give;
 
-	return give;
+    pool -= give;
+
+    return give;
 }
 
 
@@ -96,12 +96,28 @@ void UWeaponComponent::RegisterWeapon(AWeaponBase* Weapon)
     {
         Weapon->SetOwner(GetOwner());
     }
-    weaponList.AddUnique(Weapon);
+	Weapon->RegisterWeaponComponent(this);
+    WeaponList.AddUnique(Weapon);
+	
 }
 
 int32 UWeaponComponent::GetReserveAmmo(EAmmoType type)
 {
-	int32* poolPtr = AmmoPools.Find(type);
-	int32& pool = poolPtr ? * poolPtr : AmmoPools.Add(type, 0);
-	return pool;
+    int32& pool = AmmoPools.FindOrAdd(type);
+    return pool;
+}
+
+void UWeaponComponent::StartAiming()
+{
+	bIsAiming = true;
+
+	WeaponList[CurrentIdx]->SetAiming(bIsAiming);
+}
+
+void UWeaponComponent::StopAiming()
+{
+	bIsAiming = false;
+
+	StopFire();
+	WeaponList[CurrentIdx]->SetAiming(bIsAiming);
 }

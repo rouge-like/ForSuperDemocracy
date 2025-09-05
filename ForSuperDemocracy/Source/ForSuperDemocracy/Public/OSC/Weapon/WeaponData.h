@@ -10,6 +10,23 @@
 /**
  * 
  */
+USTRUCT(BlueprintType)
+struct FAimViewParams
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="ADS")
+	float TargetFOV;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="ADS")
+	float TargetArmLength;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="ADS")
+	FVector SocketOffset;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="ADS")
+	float InterpSpeed;
+};
 UCLASS(BlueprintType)
 class FORSUPERDEMOCRACY_API UWeaponData : public UPrimaryDataAsset
 {
@@ -29,4 +46,7 @@ public:
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float reloadTime;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	FAimViewParams viewParams;
 };
