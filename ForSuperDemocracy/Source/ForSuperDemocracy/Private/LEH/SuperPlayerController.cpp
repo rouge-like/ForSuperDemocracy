@@ -4,9 +4,12 @@
 #include "LEH/SuperPlayerController.h"
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
+#include "Blueprint/UserWidget.h"
+#include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "LEH/PlayerCharacter.h"
 #include "LEH/PlayerFSM.h"
+#include "OSC/Weapon/WeaponComponent.h"
 
 void ASuperPlayerController::BeginPlay()
 {
@@ -16,10 +19,23 @@ void ASuperPlayerController::BeginPlay()
 	if (Subsystem)
 	{
 		Subsystem->AddMappingContext(IMC_Player, 0);
+		Subsystem->AddMappingContext(IMC_Weapon, 0);
 	}
 
-	PlayerFSM = GetPawn()->FindComponentByClass<UPlayerFSM>();
-	IsValid(PlayerFSM);
+	// Get owning Player character
+	PlayerCharacter = Cast<APlayerCharacter>(GetPawn());
+
+	// Get owning player FSM
+	PlayerFSMComp = GetPawn()->FindComponentByClass<UPlayerFSM>();
+
+	// Get owning player weapon component
+	WeaponComp = GetPawn()->FindComponentByClass<UWeaponComponent>();
+
+	// CrossHair widget
+	if (CrossHairWidgetClass)
+	{
+		CrossHairWidget = CreateWidget<UUserWidget>(this, CrossHairWidgetClass);
+	}
 }
 
 void ASuperPlayerController::SetupInputComponent()
@@ -33,12 +49,22 @@ void ASuperPlayerController::SetupInputComponent()
 		EnhancedInput->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ASuperPlayerController::Move);
 		EnhancedInput->BindAction(MoveAction, ETriggerEvent::Started, this, &ASuperPlayerController::MoveStart);
 		EnhancedInput->BindAction(MoveAction, ETriggerEvent::Completed, this, &ASuperPlayerController::MoveEnd);
-		
-		// View Control
+		// Look
 		EnhancedInput->BindAction(LookAction, ETriggerEvent::Triggered, this, &ASuperPlayerController::Look);
 		// Sprint
 		EnhancedInput->BindAction(SprintAction, ETriggerEvent::Started, this, &ASuperPlayerController::SprintStart);
 		EnhancedInput->BindAction(SprintAction, ETriggerEvent::Completed, this, &ASuperPlayerController::SprintEnd);
+
+		// Aiming
+		EnhancedInput->BindAction(AimingAction, ETriggerEvent::Started, this, &ASuperPlayerController::Aiming);
+		EnhancedInput->BindAction(AimingAction, ETriggerEvent::Completed, this, &ASuperPlayerController::Aiming);
+
+		// Fire
+		EnhancedInput->BindAction(FireAction, ETriggerEvent::Started, this, &ASuperPlayerController::FireStart);
+		EnhancedInput->BindAction(FireAction, ETriggerEvent::Completed, this, &ASuperPlayerController::FireEnd);
+
+		// Reload
+		EnhancedInput->BindAction(ReloadAction, ETriggerEvent::Triggered, this, &ASuperPlayerController::Reload);
 	}
 }
 
@@ -63,12 +89,18 @@ void ASuperPlayerController::Move(const FInputActionValue& Value)
 
 void ASuperPlayerController::MoveStart(const FInputActionValue& Value)
 {
-	PlayerFSM->mState = EPlayerState::Move;
+	if (IsValid(PlayerFSMComp))
+	{
+		PlayerFSMComp->mState = EPlayerState::Move;
+	}
 }
 
 void ASuperPlayerController::MoveEnd(const FInputActionValue& Value)
 {
-	PlayerFSM->mState = EPlayerState::Idle;
+	if (IsValid(PlayerFSMComp))
+	{
+		PlayerFSMComp->mState = EPlayerState::Idle;
+	}
 }
 
 void ASuperPlayerController::Look(const FInputActionValue& Value)
@@ -81,18 +113,59 @@ void ASuperPlayerController::Look(const FInputActionValue& Value)
 
 void ASuperPlayerController::SprintStart(const FInputActionValue& Value)
 {
-	ACharacter* PlayerCharacter = Cast<ACharacter>(GetPawn());
-	if (PlayerCharacter)
-	{
-		PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed = PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed + SpeedIncreaseValue;
-	}
+	PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed += SpeedIncreaseValue;
 }
 
 void ASuperPlayerController::SprintEnd(const FInputActionValue& Value)
 {
-	ACharacter* PlayerCharacter = Cast<ACharacter>(GetPawn());
-	if (PlayerCharacter)
+	PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed -= SpeedIncreaseValue;
+}
+
+void ASuperPlayerController::Aiming(const FInputActionValue& Value)
+{
+	if (!bIsAiming)
 	{
-		PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed = PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed - SpeedIncreaseValue;
+		bIsAiming = true;
+		GetPawn()->bUseControllerRotationYaw = true;
+
+		PlayerCharacter->Camera->SetFieldOfView(70.f);
+
+		CrossHairWidget->AddToViewport();
+	}
+	else
+	{
+		bIsAiming = false;
+		GetPawn()->bUseControllerRotationYaw = false;
+
+		PlayerCharacter->Camera->SetFieldOfView(90.f);
+
+		CrossHairWidget->RemoveFromParent();
+	}
+}
+
+void ASuperPlayerController::FireStart(const FInputActionValue& Value)
+{
+	if (bIsAiming)
+	{
+		if (IsValid(WeaponComp))
+		{
+			WeaponComp->StartFire();
+		}
+	}
+}
+
+void ASuperPlayerController::FireEnd(const FInputActionValue& Value)
+{
+	if (IsValid(WeaponComp))
+	{
+		WeaponComp->StopFire();
+	}
+}
+
+void ASuperPlayerController::Reload(const FInputActionValue& Value)
+{
+	if (IsValid(WeaponComp))
+	{
+		WeaponComp->Reload();
 	}
 }

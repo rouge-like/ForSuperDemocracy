@@ -35,6 +35,13 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	class UCameraComponent* Camera;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = FSMComponent)
-	class UPlayerFSM* FSM;
+	UPROPERTY(VisibleAnywhere)
+	class UChildActorComponent* ChildActor;
+
+	UPROPERTY(VisibleAnywhere)
+	class UPlayerFSM* FSMComp;
+
+	UPROPERTY(VisibleAnywhere)
+	class UWeaponComponent* WeaponComp;
+	
 };
