@@ -9,7 +9,7 @@
 #include "Engine/World.h"
 #include "DrawDebugHelpers.h"
 
-// Sets default values
+// 기본값 설정
 AWeaponBase::AWeaponBase()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -18,11 +18,11 @@ AWeaponBase::AWeaponBase()
 	SetRootComponent(Mesh);
 }
 
-// Called when the game starts or when spawned
+// BeginPlay: 스폰/시작 시 초기화
 void AWeaponBase::BeginPlay()
 {
     Super::BeginPlay();
-    // Initialize ammo from data if available
+    // WeaponData가 있다면 시작 탄약을 데이터 기준으로 초기화
     if (Data)
     {
         CurrentAmmo = Data->MaxSize;
@@ -74,10 +74,10 @@ void AWeaponBase::UpdateAimAlignment()
 void AWeaponBase::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
-    // Aim alignment handled by character/AnimBP; no per-tick weapon trace
+    // 조준 정렬은 캐릭터/AnimBP에서 처리(무기 틱에서는 트레이스하지 않음)
     FiringTime += DeltaTime;
 
-    // Recover bloom over time
+    // 시간 경과에 따른 블룸 회복
     if (Data && CurrentBloom > 0.f)
     {
         const float Recover = Data->SpreadRecoveryPerSec * DeltaTime;
@@ -193,10 +193,10 @@ void AWeaponBase::FireOnce()
 
     FiringTime = 0;
     
-    // Consume ammo
+    // 탄약 소모
     CurrentAmmo = FMath::Max(0, CurrentAmmo - 1);
 
-    // Perform a single line trace to determine hit and apply damage
+    // 단일 라인트레이스로 피격 판정 및 데미지 적용
     FVector TraceStart = GetMuzzleLocation();
     FRotator ViewRot = GetFireRotation();
     if (bUseOwnerView)
@@ -210,7 +210,7 @@ void AWeaponBase::FireOnce()
         }
     }
 
-    // Apply bullet spread (cone) around aim direction
+    // 조준 방향 주변 원뿔(콘) 내에서 스프레드를 적용해 발사 방향 산출
     FVector AimDir = ViewRot.Vector();
     float SpreadDeg = Data ? GetCurrentSpreadDegrees() : 0.f;
     if (SpreadDeg > KINDA_SMALL_NUMBER)
@@ -248,10 +248,10 @@ void AWeaponBase::FireOnce()
 
     ShowBullet();
 
-    // Apply recoil kick to camera/controller
+    // 반동을 카메라/컨트롤러 입력에 적용
     ApplyRecoilKick();
 
-    // Increase bloom
+    // 블룸 증가(연사 페널티 누적)
     if (Data)
     {
         CurrentBloom = FMath::Min(Data->SpreadMax, CurrentBloom + Data->SpreadIncreasePerShot);
@@ -261,8 +261,7 @@ void AWeaponBase::FireOnce()
 float AWeaponBase::GetCurrentSpreadDegrees() const
 {
     if (!Data) return 0.f;
-    const float Base = bIsAiming ? Data->BaseSpreadADS : Data->BaseSpreadHip;
-    return Base + CurrentBloom;
+    return Data->BaseSpread + CurrentBloom;
 }
 
 void AWeaponBase::ApplyRecoilKick()
@@ -272,12 +271,13 @@ void AWeaponBase::ApplyRecoilKick()
     if (!PawnOwner) return;
     AController* Ctrl = PawnOwner->GetController();
     if (!Ctrl) return;
+    APlayerController* PCtrl = Cast<APlayerController>(Ctrl);
+    if (!PCtrl) return; // 플레이어 컨트롤러가 아닌 경우(예: AI) 스킵
 
-    const float Scalar = bIsAiming ? Data->RecoilADSScalar : 1.f;
-    const float PitchKick = FMath::FRandRange(Data->RecoilPitchMin, Data->RecoilPitchMax) * Scalar;
-    const float YawAbs = FMath::FRandRange(Data->RecoilYawMin, Data->RecoilYawMax) * Scalar;
+    const float PitchKick = FMath::FRandRange(Data->RecoilPitchMin, Data->RecoilPitchMax);
+    const float YawAbs = FMath::FRandRange(Data->RecoilYawMin, Data->RecoilYawMax);
     const float YawKick = (FMath::RandBool() ? 1.f : -1.f) * YawAbs;
 
-    Ctrl->AddPitchInput(-PitchKick); // kick up
-    Ctrl->AddYawInput(YawKick);      // small lateral sway
+    PCtrl->AddPitchInput(-PitchKick); // 위로 차오르는 피치 반동
+    PCtrl->AddYawInput(YawKick);      // 좌/우 미세 요 반동
 }

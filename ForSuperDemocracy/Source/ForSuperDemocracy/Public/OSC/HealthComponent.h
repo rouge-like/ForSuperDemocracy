@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// 프로젝트 설정의 설명 페이지에 저작권 공지를 채워주세요.
 
 #pragma once
 
@@ -22,33 +22,33 @@ class FORSUPERDEMOCRACY_API UHealthComponent : public UActorComponent
 	GENERATED_BODY()
 
 public:	
-    // Sets default values for this component's properties
+    // 컴포넌트 기본값 설정(체력/사망 가능 여부 등)
     UHealthComponent();
 
 protected:
-    // Called when the game starts
+    // BeginPlay: 체력 초기화 및 데미지 이벤트 바인딩
     virtual void BeginPlay() override;
 
 public:	
-    // Called every frame (optional)
+    // 매 프레임 호출(필요 시 HUD 동기화 등 확장 가능)
     virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
     
     UFUNCTION(BlueprintCallable, Category="Health")
-    void Heal(float Amount);
+    void Heal(float Amount); // 체력 회복(상한: MaxHealth)
 
     UFUNCTION(BlueprintCallable, Category="Health")
-    void ApplyDamage(float Amount, AActor* DamageCauser = nullptr, AController* InstigatedBy = nullptr, TSubclassOf<UDamageType> DamageType = nullptr);
+    void ApplyDamage(float Amount, AActor* DamageCauser = nullptr, AController* InstigatedBy = nullptr, TSubclassOf<UDamageType> DamageType = nullptr); // 외부에서 데미지 유도(엔진 ApplyDamage 경유)
 
     UFUNCTION(BlueprintCallable, Category="Health")
-    void Kill();
+    void Kill(); // 즉시 처치(현재 체력만큼 데미지 적용)
  
     UFUNCTION(BlueprintPure, Category="Health")
-    bool IsAlive() const { return CurrentHealth > 0.f; }
+    bool IsAlive() const { return CurrentHealth > 0.f; } // 생존 여부
 
     UFUNCTION(BlueprintPure, Category="Health")
-    float GetHealthPercent() const { return MaxHealth > 0.f ? CurrentHealth / MaxHealth : 0.f; }
+    float GetHealthPercent() const { return MaxHealth > 0.f ? CurrentHealth / MaxHealth : 0.f; } // 체력 비율(0~1)
 
-    // Events
+    // 델리게이트 이벤트
     UPROPERTY(BlueprintAssignable, Category="Health|Event")
     FOnHealthChanged OnHealthChanged;
 
@@ -59,7 +59,7 @@ public:
     FOnDeath OnDeath;
 
 protected:
-    // Damage event bindings
+    // 데미지 이벤트 바인딩 핸들러(엔진 콜백)
     UFUNCTION()
     void HandleAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser);
 

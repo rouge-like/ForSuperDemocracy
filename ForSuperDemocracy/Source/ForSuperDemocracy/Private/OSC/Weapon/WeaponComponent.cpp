@@ -5,7 +5,7 @@
 #include "Components/ChildActorComponent.h"
 
 
-// Sets default values for this component's properties
+// 컴포넌트 기본값 설정(필요 시 Tick 활성화 등)
 UWeaponComponent::UWeaponComponent()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
@@ -16,7 +16,7 @@ UWeaponComponent::UWeaponComponent()
 }
 
 
-// Called when the game starts
+// BeginPlay: 오너의 ChildActor 무기 자동 등록 및 초기 장비 설정
 void UWeaponComponent::BeginPlay()
 {
     Super::BeginPlay();
@@ -45,7 +45,7 @@ void UWeaponComponent::BeginPlay()
 }
 
 
-// Called every frame
+// 매 프레임 호출(필요 시 조준 정렬/카메라 보간 등 확장 가능)
 void UWeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
@@ -55,15 +55,15 @@ void UWeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 
 void UWeaponComponent::Equip(int32 idx)
 {
-	StopFire();
+    StopFire(); // 전환 전 사격 중지로 안정성 확보
 	
 	CurrentIdx = idx;
 }
 
 void UWeaponComponent::StartFire()
 {
-	if (!bIsAiming)
-		return;
+    if (!bIsAiming)
+        return; // ADS 아닐 경우 사격 금지(게임 디자인 규칙)
 	
 	WeaponList[CurrentIdx]->StartFire();
 }
@@ -75,13 +75,13 @@ void UWeaponComponent::StopFire()
 
 void UWeaponComponent::Reload()
 {
-	WeaponList[CurrentIdx]->StartReload();
+    WeaponList[CurrentIdx]->StartReload(); // 무기 내부 타이머로 완료 콜백 제어
 }
 
 int32 UWeaponComponent::PullAmmo(EAmmoType type, int32 need)
 {
-    int32& pool = AmmoPools.FindOrAdd(type);
-    const int32 give = FMath::Clamp(need, 0, pool);
+    int32& pool = AmmoPools.FindOrAdd(type);         // 탄약 풀 생성/조회
+    const int32 give = FMath::Clamp(need, 0, pool);  // 요청 수량과 잔량 중 최소만 지급
 
     pool -= give;
 
@@ -94,11 +94,11 @@ void UWeaponComponent::RegisterWeapon(AWeaponBase* Weapon)
     if (!IsValid(Weapon)) return;
     if (Weapon->GetOwner() != GetOwner())
     {
-        Weapon->SetOwner(GetOwner());
+        Weapon->SetOwner(GetOwner()); // 무기 오너를 컴포넌트 오너로 통일
     }
-	Weapon->RegisterWeaponComponent(this);
+    Weapon->RegisterWeaponComponent(this); // 상호 참조 등록(탄약 풀/상태 공유)
     WeaponList.AddUnique(Weapon);
-	
+    
 }
 
 int32 UWeaponComponent::GetReserveAmmo(EAmmoType type)
@@ -109,15 +109,15 @@ int32 UWeaponComponent::GetReserveAmmo(EAmmoType type)
 
 void UWeaponComponent::StartAiming()
 {
-	bIsAiming = true;
+    bIsAiming = true;
 
-	WeaponList[CurrentIdx]->SetAiming(bIsAiming);
+    WeaponList[CurrentIdx]->SetAiming(bIsAiming);
 }
 
 void UWeaponComponent::StopAiming()
 {
-	bIsAiming = false;
+    bIsAiming = false;
 
-	StopFire();
-	WeaponList[CurrentIdx]->SetAiming(bIsAiming);
+    StopFire(); // ADS 해제 시 즉시 사격 중단
+    WeaponList[CurrentIdx]->SetAiming(bIsAiming);
 }
