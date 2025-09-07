@@ -167,6 +167,7 @@ void ASuperPlayerController::FireStart(const FInputActionValue& Value)
 	{
 		if (IsValid(WeaponComp))
 		{
+			UE_LOG(LogTemp, Warning, TEXT("Fire start"));
 			WeaponComp->StartFire();
 		}
 	}
