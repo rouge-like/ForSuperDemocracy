@@ -1,61 +1,74 @@
-# CODEX NOTE
+﻿# CODEX NOTE
 
 - 프로젝트 목표: TPS 게임(Helldivers 2 느낌) 프로토타입
-- 요소: Unreal Engine 5 프로젝트(`ForSuperDemocracy.uproject`)
+- 엔진: Unreal Engine 5 프로젝트(`ForSuperDemocracy.uproject`)
 
 ## 일정/진척
-- 팀 구성: 3인 개발(가정)
-- 담당(예시): 무기, UI, 시스템
+- 팀 구성: 3인 개발(가칭)
+- 담당(임시): 무기, UI, 시스템
 - 오늘 초점: 무기 `WeaponBase`와 `WeaponComponent` 구체화
 
 ## 현재 코드/구성 요약
-- 엔진/세팅: UE 5.6, 최신 IncludeOrder. `Game`/`Editor` 타깃(`Source/ForSuperDemocracy.Target.cs`, `Source/ForSuperDemocracyEditor.Target.cs`).
-- 게임 모듈: `ForSuperDemocracy` 단일 모듈. 기본 모듈만 등록되어 있으며 커스텀 게임플레이는 초기 상태.
+- 엔진/빌드: UE 5.6, 최신 IncludeOrder. `Game`/`Editor` 타깃(`Source/ForSuperDemocracy.Target.cs`, `Source/ForSuperDemocracyEditor.Target.cs`).
+- 게임 모듈: `ForSuperDemocracy` 단일 모듈. 기본 모듈 등록/실행 상태.
   - `Source/ForSuperDemocracy/ForSuperDemocracy.cpp`: `FDefaultGameModuleImpl`로 기본 모듈 등록/실행.
   - `Source/ForSuperDemocracy/ForSuperDemocracy.h`: 기본 헤더 포함.
-  - `Source/ForSuperDemocracy/ForSuperDemocracy.Build.cs`: `Core`, `CoreUObject`, `Engine`, `InputCore`, `EnhancedInput` 의존성.
-- 콘텐츠: `Content/Maps/ProtoMap.umap` 존재. 현재 `DefaultEngine.ini`의 `GameDefaultMap`은 OpenWorld 템플릿으로 되어 있어 `ProtoMap`으로 교체 필요.
-- 입력 설정: `EnhancedInput` 사용 예정(매핑/바인딩 정비 중).
-- 렌더링: Windows DX12 + SM6, Linux Vulkan SM6. Lumen(동적 GI/리플렉션) 사용, Nanite/RT는 상황에 따라 조정.
+  - `Source/ForSuperDemocracy/ForSuperDemocracy.Build.cs`: `Core`, `CoreUObject`, `Engine`, `InputCore`, `EnhancedInput` 종속.
+- 콘텐츠: `Content/Maps/ProtoMap.umap` 존재 예정. `Config/DefaultEngine.ini`의 `GameDefaultMap`은 `ProtoMap`으로 설정됨(에디터에서 확인 권장).
+- 입력 설정: `EnhancedInput` 사용 계획(매핑/바인딩 준비 필요).
+- 렌더: Windows DX12 + SM6, Linux Vulkan SM6. Lumen(동적 GI/리플렉션) 사용, Nanite/RT는 상황에 따라 조정.
 
 ## 현재 상태 진단
-- 상태: 초기 아키텍처 단계. 캐릭터/플레이어 컨트롤러/게임모드/입력 매핑/기본 UI/AI 등은 구축 중.
-- 권장: 프로토타입 단계에서는 성능을 고려해 품질 옵션은 보수적으로 설정(후속 튜닝 예정).
+- 상태: 초기 스켈레톤 설계. 캐릭터/플레이어 컨트롤러/게임모드/입력 매핑/기본 UI/AI 구축 진행 중.
+- 권장: 프로토 설계서 기준으로 기능 가로 슬라이스 보수 및 지속 러닝 설정.
 
 ### 무기 시스템 설계 초안
-- `WeaponBase`(AActor): 데미지, RPM, 탄창/예비탄(종류), 상태(Idle/Firing/Reloading), `Fire()`, `Reload()`, `CanFire()` API.
-- `WeaponComponent`(UActorComponent): 소유자 입력을 받아 발사/장전 트리거, 타이머 기반 연사, 장착/해제 관리.
-- 히트스캔 흐름: `GetMuzzleTransform` → `LineTraceSingleByChannel` → Hit 데이터로 임팩트 이펙트/사운드, 대미지 적용.
-- UI 연동: `WeaponComponent` 이벤트로 탄수/장전 진행을 UMG HUD 바인딩.
-- 확장: 발사 방식(Hitscan/Projectile), 반동/스프레드 모델, 임팩트 SFX/VFX 브리지, 네트워크 RPC 등.
+- `WeaponBase`(AActor): 데미지, RPM, 탄창/탄종, 상태(Idle/Firing/Reloading), `Fire()`, `Reload()`, `CanFire()` API.
+- `WeaponComponent`(UActorComponent): 소유자 입력 받아 발사/재장전 처리, 타이머 기반 발사, 장착/교체 관리.
+- 히트스캔 흐름: `GetMuzzleTransform` + `LineTraceSingleByChannel`, Hit 데이터로 이펙트/사운드/데미지 처리.
+- UI 연동: `WeaponComponent` 이벤트로 탄수/재장전 진행 HUD 바인딩.
+- 확장: 발사 방식(Hitscan/Projectile), 반동/스프레드 모델, SFX/VFX 브리지, 네트워크 RPC.
 
-## 1~2일 추가 아이디어(Helldivers 느낌 확장)
-- 간단 AI: `BehaviorTree`/`EQS`로 추격/공격, AIController + NavMesh.
-- 적 폰: 간단/거리 기반 AI 폰 스켈레톤.
-- 무기: 무기별 발사속도/반동/스프레드, 애님 슬롯 구조 기초.
-- 카메라/콜리전: 좁은 공간에서의 카메라 충돌/당김 부드럽게.
-- 체력/목표/HUD: 체력/목표 간단 구현, 저체력 HUD 표시.
+## 1~2주 추가 아이디어(Helldivers 느낌 확장)
+- 간단 AI: `BehaviorTree`/`EQS` 추격/공격, AIController + NavMesh.
+- 군중 간단/거리 기반 AI 스켈레톤.
+- 무기: 발사 주기/반동/스프레드, 그립/슬롯 구조 기초.
+- 카메라/콜리전: 좁은 공간에서 카메라 충돌/클리핑 부드럽게.
+- 체력/목표/HUD: 체력/목표 간단 구현, 파티 체력 HUD 표시.
 
 ## 참고/메모
 - 기본 맵 교체: `Config/DefaultEngine.ini`의 `[/Script/EngineSettings.GameMapsSettings] GameDefaultMap`을 `ProtoMap`으로 설정.
 - `EnhancedInput` 에셋 구조 추천: `Input/IMC_Default`, `Input/IA_Move`, `Input/IA_Look`, `Input/IA_Fire`, `Input/IA_Sprint`, `Input/IA_Jump`, `IA_Aim`, `IA_Reload`.
-- 코드 베이스 위치: `Source/ForSuperDemocracy/` 아래 `Character`, `PlayerController`, `GameMode`, `Weapon` 관련 클래스로 분리 유지.
+- 코드 베이스 배치: `Source/ForSuperDemocracy/` 아래 `Character`, `PlayerController`, `GameMode`, `Weapon` 관련 클래스로 분리 유지.
 
-## 다음 세션 체크리스트
+## 다음 액션 체크리스트
 - Unreal Editor에서 `ForSuperDemocracy.uproject` 오픈 후 `ProtoMap`이 기본 맵인지 확인.
-- `Content/Input` 폴더의 IMC/IA 에셋과 캐릭터 BP/CPP 연결 상태 확인.
-- 작업 진행 상황을 본 문서에 수시 갱신.
+- `Content/Input` 폴더의 IMC/IA 에셋을 캐릭터 BP/CPP에 연결 상태 확인.
+- 작업 진행 상황과 문서를 주기적으로 갱신.
 
 ---
-- 마무리: 자동 작성(Codex CLI)
+- 마무리 자동화 성(Codex CLI)
 
 ## 작업 로그 (2025-09-04)
-- 장전/재장전 로직 및 발사 속도(RPM) 조정 완료.
-- 임시 크로스헤어(UMG) 위젯 제작 및 HUD에 적용.
-- 조준/비조준 상태 추가: 조준 상태에서만 발사 가능하도록 게이팅.
-- 조준 중 줌(FOV 확대) 적용: 비조준↔조준 전환 시 보간 기반 확대/복귀.
+- 재장전/발사 로직 및 발사 주기(RPM) 조정 완료.
+- 임시 UI(HUD/UMG) 위젯 제작 및 HUD 적용.
+- 조준/비조준 상태 추가: 조준 상태에서 발사 가중치 적용.
+- 조준 시 시야(FOV) 전환: 비조준↔조준 전환 보간 기반 적용/복귀.
 
-## 내일 할 일 (2025-09-05)
-- HealthComponent(UActorComponent) 제작: 체력/피격/사망 이벤트와 대미지 처리(AnyDamage/PointDamage 바인딩), Weapon 대미지 흐름 연결.
-- 조준 시 총구 방향 정합: 카메라 시선 기준으로 라인트레이스/발사 방향 보정, 머즐 VFX와 탄착 지점 일치.
+## 일일 TODO (2025-09-05)
+- HealthComponent(UActorComponent) 제작: 체력/피격/사망 이벤트 및 데미지 처리(AnyDamage/PointDamage 바인딩, Weapon 데미지 흐름 연결).
+- 조준 시 총구 방향 정합: 카메라 시선 기반으로 레이캐스트/발사 방향 보정, 머즐 VFX와 일치 지점 유지.
 
+## 리포 점검 요약 (2025-09-06)
+- 엔진/빌드: UE 5.6, IncludeOrder 5.6, 단일 모듈 정상. EnhancedInput 종속성 포함.
+- 맵/렌더: Default/Editor 맵 `ProtoMap`으로 지정, DX12/Vulkan SM6 + Lumen/RT 설정 반영.
+- 시스템: 무기(WeaponBase/WeaponComponent/WeaponData/AmmoType), 체력(HealthComponent) 구현 확인.
+- 캐릭터/컨트롤러: PlayerCharacter(SpringArm/Camera/FSM) + SuperPlayerController(Move/Look/Sprint) 기본 구현.
+- 통합 미흡: WeaponComponent 캐릭터 부착/입력 바인딩(발사/재장전/조준), ADS 보간/정렬, HUD/UMG 연동, Input 에셋 연결 상태 확인 필요.
+
+## 오늘 TODO (2025-09-06)
+- 입력 바인딩: 컨트롤러에 IA_Fire/IA_Reload/IA_Aim(시작/종료) 바인딩, WeaponComponent의 StartFire/StopFire/Reload/StartAiming/StopAiming 연결.
+- 무기 컴포넌트 통합: PlayerCharacter에 WeaponComponent 추가, ChildActor 무기 자동 등록, 시작 탄약 풀 초기화.
+- ADS/카메라: 조준 중 UpdateAimAlignment 호출, FAimViewParams로 카메라(FOV/암 길이/오프셋) 보간 적용.
+- HUD 임시화: 체력/탄약 표시용 간단 위젯 또는 디버그 HUD 추가, HealthComponent 이벤트/탄약 표시 연동.
+- 맵/에셋 확인: ProtoMap 및 IMC/IA 입력 에셋 존재/링크 점검(없으면 생성/연결).
