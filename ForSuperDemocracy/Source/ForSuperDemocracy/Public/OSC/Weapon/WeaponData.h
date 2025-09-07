@@ -30,7 +30,7 @@ struct FAimViewParams
 UCLASS(BlueprintType)
 class FORSUPERDEMOCRACY_API UWeaponData : public UPrimaryDataAsset
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	EAmmoType AmmoType;
@@ -47,6 +47,42 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float reloadTime;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	FAimViewParams viewParams;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+    FAimViewParams viewParams;
+
+    // Recoil parameters
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Recoil")
+    float RecoilPitchMin = 0.2f; // degrees per shot
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Recoil")
+    float RecoilPitchMax = 0.6f; // degrees per shot
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Recoil")
+    float RecoilYawMin = 0.0f; // degrees per shot
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Recoil")
+    float RecoilYawMax = 0.4f; // degrees per shot
+
+    // Multiplier applied while aiming down sights (typically < 1.0)
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Recoil")
+    float RecoilADSScalar = 0.6f;
+
+    // Spread/Bloom parameters (degrees)
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Spread")
+    float BaseSpreadHip = 1.2f;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Spread")
+    float BaseSpreadADS = 0.3f;
+
+    // How much spread increases per shot (degrees)
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Spread")
+    float SpreadIncreasePerShot = 0.2f;
+
+    // Max additional bloom (degrees)
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Spread")
+    float SpreadMax = 3.0f;
+
+    // Bloom recovery per second (degrees)
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Spread")
+    float SpreadRecoveryPerSec = 3.0f;
 };

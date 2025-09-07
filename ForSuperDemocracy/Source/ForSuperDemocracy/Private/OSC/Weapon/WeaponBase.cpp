@@ -73,9 +73,16 @@ void AWeaponBase::UpdateAimAlignment()
 // Called every frame
 void AWeaponBase::Tick(float DeltaTime)
 {
-	Super::Tick(DeltaTime);
+    Super::Tick(DeltaTime);
     // Aim alignment handled by character/AnimBP; no per-tick weapon trace
     FiringTime += DeltaTime;
+
+    // Recover bloom over time
+    if (Data && CurrentBloom > 0.f)
+    {
+        const float Recover = Data->SpreadRecoveryPerSec * DeltaTime;
+        CurrentBloom = FMath::Max(0.f, CurrentBloom - Recover);
+    }
 
     if (bIsFiring && Data && FiringTime >= Data->fireTime)
     {
@@ -203,7 +210,15 @@ void AWeaponBase::FireOnce()
         }
     }
 
-    const FVector TraceEnd = TraceStart + ViewRot.Vector() * MaxRange;
+    // Apply bullet spread (cone) around aim direction
+    FVector AimDir = ViewRot.Vector();
+    float SpreadDeg = Data ? GetCurrentSpreadDegrees() : 0.f;
+    if (SpreadDeg > KINDA_SMALL_NUMBER)
+    {
+        const float SpreadRad = FMath::DegreesToRadians(SpreadDeg);
+        AimDir = FMath::VRandCone(AimDir, SpreadRad);
+    }
+    const FVector TraceEnd = TraceStart + AimDir * MaxRange;
 
     FHitResult Hit;
     FCollisionQueryParams Params(SCENE_QUERY_STAT(WeaponFireTrace), false, this);
@@ -232,5 +247,37 @@ void AWeaponBase::FireOnce()
     }
 
     ShowBullet();
+
+    // Apply recoil kick to camera/controller
+    ApplyRecoilKick();
+
+    // Increase bloom
+    if (Data)
+    {
+        CurrentBloom = FMath::Min(Data->SpreadMax, CurrentBloom + Data->SpreadIncreasePerShot);
+    }
 }
 
+float AWeaponBase::GetCurrentSpreadDegrees() const
+{
+    if (!Data) return 0.f;
+    const float Base = bIsAiming ? Data->BaseSpreadADS : Data->BaseSpreadHip;
+    return Base + CurrentBloom;
+}
+
+void AWeaponBase::ApplyRecoilKick()
+{
+    if (!Data) return;
+    APawn* PawnOwner = Cast<APawn>(GetOwner());
+    if (!PawnOwner) return;
+    AController* Ctrl = PawnOwner->GetController();
+    if (!Ctrl) return;
+
+    const float Scalar = bIsAiming ? Data->RecoilADSScalar : 1.f;
+    const float PitchKick = FMath::FRandRange(Data->RecoilPitchMin, Data->RecoilPitchMax) * Scalar;
+    const float YawAbs = FMath::FRandRange(Data->RecoilYawMin, Data->RecoilYawMax) * Scalar;
+    const float YawKick = (FMath::RandBool() ? 1.f : -1.f) * YawAbs;
+
+    Ctrl->AddPitchInput(-PitchKick); // kick up
+    Ctrl->AddYawInput(YawKick);      // small lateral sway
+}

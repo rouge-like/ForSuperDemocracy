@@ -71,6 +71,15 @@ protected:
 
     UPROPERTY(BlueprintReadOnly)
     FVector TargetWS;
+
+    // Recoil/Spread state
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Weapon|Spread")
+    float CurrentBloom = 0.f;
+
+    // Computes current spread in degrees considering ADS and bloom
+    float GetCurrentSpreadDegrees() const;
+
+    void ApplyRecoilKick();
 public:	
     // Called every frame
     virtual void Tick(float DeltaTime) override;
