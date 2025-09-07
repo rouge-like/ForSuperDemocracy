@@ -39,16 +39,16 @@ public:
 	int32 MaxSize;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	float damage;
+	float Damage;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-    float fireTime;               // 발사 간격(초). RPM = 60 / fireTime
+    float FireTime;               // 발사 간격(초). RPM = 60 / fireTime
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-    float reloadTime;             // 재장전에 걸리는 시간(초)
+    float ReloadTime;             // 재장전에 걸리는 시간(초)
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-    FAimViewParams viewParams;    // ADS 전환 시 카메라/암 파라미터
+    FAimViewParams ViewParams;    // ADS 전환 시 카메라/암 파라미터
 
     // 반동 파라미터(도 단위, 1발당 적용 범위)
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Recoil")
@@ -63,7 +63,7 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Recoil")
     float RecoilYawMax = 0.4f;    // 요 최대 반동
 
-    // 스프레드/블룸 파라미터(도 단위). ADS에서만 사격하므로 단일 기본 스프레드만 사용.
+    // 스프레드/블룸 파라미터(도 단위)
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Spread")
     float BaseSpread = 0.3f;      // 기본 스프레드(원뿔 반각)
 
@@ -78,4 +78,10 @@ public:
     // 초당 블룸 회복량(도)
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Spread")
     float SpreadRecoveryPerSec = 3.0f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Recover")
+	float RecoverDegPerSec = 60.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Recover")
+	float RecoverWhileFiring = 0.5f;
 };

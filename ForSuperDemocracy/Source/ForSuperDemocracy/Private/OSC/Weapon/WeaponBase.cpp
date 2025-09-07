@@ -8,6 +8,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Engine/World.h"
 #include "DrawDebugHelpers.h"
+#include "GameFramework/Character.h"
 
 // 기본값 설정
 AWeaponBase::AWeaponBase()
@@ -29,47 +30,6 @@ void AWeaponBase::BeginPlay()
     }
 }
 
-void AWeaponBase::UpdateAimAlignment()
-{
-    const FVector Start = bUseOwnerView ?  [this]()
-    {
-        FVector L;
-        FRotator R;
-        if(const APawn* P=Cast<APawn>(GetOwner()))
-        {
-            if(const AController* C=P->GetController())
-            {
-                C->GetPlayerViewPoint(L,R);
-                return L;
-            }
-        }
-        return GetMuzzleLocation();
-    } () : GetMuzzleLocation();
-    const FRotator Rot = GetFireRotation();
-    const FVector End = Start + Rot.Vector() * MaxRange;
-
-    FHitResult Hit;
-    FCollisionQueryParams Params(SCENE_QUERY_STAT(WeaponTrace), false, this);
-    Params.AddIgnoredActor(this);
-    if (GetOwner()) Params.AddIgnoredActor(GetOwner());
-
-    bool bHit = GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECollisionChannel::ECC_Visibility, Params);
-
-    #if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
-    DrawDebugLine(GetWorld(), Start, bHit ? Hit.ImpactPoint : End, bHit ? FColor::Red : FColor::Green, false, 1.0f, 0, 1.0f);
-    DrawDebugLine(GetWorld(), GetMuzzleLocation(), bHit ? Hit.ImpactPoint : End, bHit ? FColor::Red : FColor::Green, false, 1.0f, 0, 1.0f);
-#endif
-
-    if (bHit && Hit.GetActor())
-    {
-        Target = Hit.GetActor();
-    }
-    else
-    {
-        Target = nullptr;
-    }
-}
-
 // Called every frame
 void AWeaponBase::Tick(float DeltaTime)
 {
@@ -84,15 +44,38 @@ void AWeaponBase::Tick(float DeltaTime)
         CurrentBloom = FMath::Max(0.f, CurrentBloom - Recover);
     }
 
-    if (bIsFiring && Data && FiringTime >= Data->fireTime)
+    
+    if (bIsFiring && Data && FiringTime >= Data->FireTime)
     {
         FireOnce();
     }
+
+    float RecoverRatio = Data->RecoverDegPerSec * DeltaTime * (bIsFiring ? Data->RecoverWhileFiring : 1.f);
+
+
+    if (!PC) return;
+    // Pitch 복구
+    float StepP = FMath::Min(RecoilPitchToRecover, RecoverRatio);
+    PC->AddPitchInput(StepP);
+    RecoilPitchToRecover -= StepP;
+    
+    // Yaw 복구
+    float SignY = FMath::Sign(RecoilYawToRecover);
+    float StepY = FMath::Min(FMath::Abs(RecoilYawToRecover), RecoverRatio);
+    PC->AddYawInput(-SignY * StepY);
+    RecoilYawToRecover -= SignY * StepY;
+    
 }
 
 void AWeaponBase::RegisterWeaponComponent(UWeaponComponent* wc)
 {
     WC = wc;
+
+    ACharacter* Character =  Cast<ACharacter>(GetOwner());
+    if (Character)
+    {
+        PC = Cast<APlayerController>(Character->GetController());
+    }
 }
 
 void AWeaponBase::StartFire()
@@ -123,7 +106,7 @@ void AWeaponBase::StartReload()
 
     bIsReloading = true;
 
-    GetWorldTimerManager().SetTimer(TimerHandle_Reload, this, &AWeaponBase::EndReload, Data->reloadTime, false);
+    GetWorldTimerManager().SetTimer(TimerHandle_Reload, this, &AWeaponBase::EndReload, Data->ReloadTime, false);
     if(GEngine) GEngine->AddOnScreenDebugMessage(1, 1.5f, FColor::Green, FString::Printf(TEXT("Reloading...")));
 }
 
@@ -143,19 +126,18 @@ FVector AWeaponBase::GetMuzzleLocation() const
 
 FRotator AWeaponBase::GetFireRotation() const
 {
-    if (bUseOwnerView)
+
+    if (const APawn* PawnOwner = Cast<APawn>(GetOwner()))
     {
-        if (const APawn* PawnOwner = Cast<APawn>(GetOwner()))
+        FVector L;
+        FRotator R;
+        if (const AController* C = PawnOwner->GetController())
         {
-            FVector L;
-            FRotator R;
-            if (const AController* C = PawnOwner->GetController())
-            {
-                C->GetPlayerViewPoint(L, R);
-                return R;
-            }
+            C->GetPlayerViewPoint(L, R);
+            return R;
         }
     }
+    
 
     if (Mesh && Mesh->DoesSocketExist(MuzzleSocketName))
     {
@@ -199,16 +181,15 @@ void AWeaponBase::FireOnce()
     // 단일 라인트레이스로 피격 판정 및 데미지 적용
     FVector TraceStart = GetMuzzleLocation();
     FRotator ViewRot = GetFireRotation();
-    if (bUseOwnerView)
+
+    if (const APawn* P = Cast<APawn>(GetOwner()))
     {
-        if (const APawn* P = Cast<APawn>(GetOwner()))
+        if (const AController* C = P->GetController())
         {
-            if (const AController* C = P->GetController())
-            {
-                C->GetPlayerViewPoint(TraceStart, ViewRot);
-            }
+            C->GetPlayerViewPoint(TraceStart, ViewRot);
         }
     }
+    
 
     // 조준 방향 주변 원뿔(콘) 내에서 스프레드를 적용해 발사 방향 산출
     FVector AimDir = ViewRot.Vector();
@@ -229,7 +210,7 @@ void AWeaponBase::FireOnce()
     const FVector ImpactPoint = bHit ? Hit.ImpactPoint : TraceEnd;
 
 #if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
-    DrawDebugLine(GetWorld(), TraceStart, ImpactPoint, bHit ? FColor::Red : FColor::Green, false, 1.0f, 0, 1.5f);
+    // DrawDebugLine(GetWorld(), TraceStart, ImpactPoint, bHit ? FColor::Red : FColor::Green, false, 1.0f, 0, 1.5f);
     DrawDebugLine(GetWorld(), GetMuzzleLocation(), ImpactPoint, bHit ? FColor::Red : FColor::Green, false, 1.0f, 0, 1.5f);
 #endif
 
@@ -242,7 +223,7 @@ void AWeaponBase::FireOnce()
         {
             InstigatorController = P->GetController();
         }
-        UGameplayStatics::ApplyPointDamage(HitActor, Data ? Data->damage : 0.f, ShotDir, Hit, InstigatorController, this, UDamageType::StaticClass());
+        UGameplayStatics::ApplyPointDamage(HitActor, Data ? Data->Damage : 0.f, ShotDir, Hit, InstigatorController, this, UDamageType::StaticClass());
         
     }
 
@@ -266,18 +247,15 @@ float AWeaponBase::GetCurrentSpreadDegrees() const
 
 void AWeaponBase::ApplyRecoilKick()
 {
-    if (!Data) return;
-    APawn* PawnOwner = Cast<APawn>(GetOwner());
-    if (!PawnOwner) return;
-    AController* Ctrl = PawnOwner->GetController();
-    if (!Ctrl) return;
-    APlayerController* PCtrl = Cast<APlayerController>(Ctrl);
-    if (!PCtrl) return; // 플레이어 컨트롤러가 아닌 경우(예: AI) 스킵
+    if (!Data || !PC) return;
 
     const float PitchKick = FMath::FRandRange(Data->RecoilPitchMin, Data->RecoilPitchMax);
     const float YawAbs = FMath::FRandRange(Data->RecoilYawMin, Data->RecoilYawMax);
     const float YawKick = (FMath::RandBool() ? 1.f : -1.f) * YawAbs;
 
-    PCtrl->AddPitchInput(-PitchKick); // 위로 차오르는 피치 반동
-    PCtrl->AddYawInput(YawKick);      // 좌/우 미세 요 반동
+    PC->AddPitchInput(-PitchKick); // 위로 차오르는 Pitch 반동
+    PC->AddYawInput(YawKick);      // 좌/우 미세 Yaw 반동
+
+    RecoilPitchToRecover += PitchKick;
+    RecoilYawToRecover += YawKick;
 }

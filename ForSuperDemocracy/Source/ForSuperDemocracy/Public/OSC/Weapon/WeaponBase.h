@@ -36,9 +36,6 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Weapon")
     float MaxRange = 10000.f;     // 히트스캔 최대 사거리(cm)
 
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Weapon")
-    bool bUseOwnerView = true;    // 오너(플레이어) 뷰포인트를 사용해 조준
-
     int32 CurrentAmmo = 0;        // 현재 탄약(탄창 내)
     bool bIsReloading = false;    // 재장전 중 여부
     bool bIsFiring = false;       // 연사 중 여부
@@ -60,11 +57,11 @@ protected:
 
     UPROPERTY()
     TObjectPtr<UWeaponComponent> WC; // 소유자 무기 컴포넌트(탄약 풀 연동)
+    UPROPERTY()
+    TObjectPtr<APlayerController> PC;
 
     UPROPERTY(EditDefaultsOnly)
     FAimViewParams AimViewParams; // 무기 자체에 바인딩된 ADS 파라미터(옵션)
-
-    void UpdateAimAlignment();    // 카메라-총구 정렬 보정(디버그 트레이스)
 
     UPROPERTY()
     TObjectPtr<AActor> Target;    // 최근 조준 트레이스에서 획득한 타깃(옵션)
@@ -80,6 +77,9 @@ protected:
     float GetCurrentSpreadDegrees() const; // 현재 스프레드(기본 + 블룸, 도 단위)
 
     void ApplyRecoilKick();       // 반동: 컨트롤러에 피치/요 입력 적용
+
+    float RecoilPitchToRecover = 0.f;
+    float RecoilYawToRecover = 0.f;
 public:	
     // Called every frame
     virtual void Tick(float DeltaTime) override;
