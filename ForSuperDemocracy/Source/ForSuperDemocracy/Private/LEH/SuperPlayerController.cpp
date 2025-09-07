@@ -24,6 +24,10 @@ void ASuperPlayerController::BeginPlay()
 
 	// Get owning Player character
 	PlayerCharacter = Cast<APlayerCharacter>(GetPawn());
+	if (PlayerCharacter)
+	{
+		PlayerCharacter->OnZoomInCompleted.AddDynamic(this, &ASuperPlayerController::CrossHairWidgetOn);
+	}
 
 	// Get owning player FSM
 	PlayerFSMComp = GetPawn()->FindComponentByClass<UPlayerFSM>();
@@ -126,21 +130,35 @@ void ASuperPlayerController::Aiming(const FInputActionValue& Value)
 	if (!bIsAiming)
 	{
 		bIsAiming = true;
-		GetPawn()->bUseControllerRotationYaw = true;
+		
+		// Actor rotation
+		PlayerCharacter->GetCharacterMovement()->bOrientRotationToMovement = false;
+		PlayerCharacter->GetCharacterMovement()->bUseControllerDesiredRotation = true;
+		PlayerCharacter->GetCharacterMovement()->RotationRate = FRotator(0.f, 500.f, 0.f);
+		PlayerCharacter->bUseControllerRotationYaw = false;
 
-		PlayerCharacter->Camera->SetFieldOfView(70.f);
-
-		CrossHairWidget->AddToViewport();
+		// Set FOV
+		PlayerCharacter->StartZoom(true);
 	}
 	else
 	{
 		bIsAiming = false;
-		GetPawn()->bUseControllerRotationYaw = false;
 
-		PlayerCharacter->Camera->SetFieldOfView(90.f);
+		// Actor rotation
+		PlayerCharacter->GetCharacterMovement()->bUseControllerDesiredRotation = false;
+		PlayerCharacter->GetCharacterMovement()->bOrientRotationToMovement = true;
 
+		// Set FOV
+		PlayerCharacter->StartZoom(false);
+
+		// UI
 		CrossHairWidget->RemoveFromParent();
 	}
+}
+
+void ASuperPlayerController::CrossHairWidgetOn()
+{
+	CrossHairWidget->AddToViewport();
 }
 
 void ASuperPlayerController::FireStart(const FInputActionValue& Value)

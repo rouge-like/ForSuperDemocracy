@@ -47,7 +47,25 @@ void APlayerCharacter::BeginPlay()
 void APlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	
+
+	if (bIsZooming)
+	{
+		CurrentLerpAlpha = FMath::Clamp(CurrentLerpAlpha+DeltaTime*LerpSpeed, 0.0f, 1.0f);
+
+		float NewFOV = FMath::Lerp(ZoomStartFOV, ZoomTargetFOV, CurrentLerpAlpha);
+		Camera->SetFieldOfView(NewFOV);
+
+		if (FMath::IsNearlyEqual(CurrentLerpAlpha, 1.f, 0.001f))
+		{
+			if (ZoomTargetFOV == MinFOV)
+			{
+				OnZoomInCompleted.Broadcast();
+			}
+			
+			CurrentLerpAlpha = 0.f;
+			bIsZooming = false;
+		}
+	}
 }
 
 // Called to bind functionality to input
@@ -56,4 +74,23 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 }
+
+void APlayerCharacter::StartZoom(bool IsAiming)
+{
+	bIsZooming = true;
+
+	if (IsAiming)
+	{
+		ZoomStartFOV = Camera->FieldOfView; // 현재 FOV에서 시작
+		ZoomTargetFOV = MinFOV;
+		CurrentLerpAlpha = 0.0f;
+	}
+	else
+	{
+		ZoomStartFOV = Camera->FieldOfView;
+		ZoomTargetFOV = MaxFOV;
+		CurrentLerpAlpha = 0.0f;
+	}
+}
+
 

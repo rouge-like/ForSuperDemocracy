@@ -74,6 +74,9 @@ public:
 
 	void Aiming(const FInputActionValue& Value);
 	
+	UFUNCTION()
+	void CrossHairWidgetOn();
+	
 	// Fire
 	UPROPERTY(EditDefaultsOnly, Category = Input)
 	class UInputAction* FireAction;

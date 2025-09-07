@@ -7,6 +7,8 @@
 
 #include "PlayerCharacter.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnZoomInCompleted);
+
 UCLASS()
 class FORSUPERDEMOCRACY_API APlayerCharacter : public ACharacter
 {
@@ -43,5 +45,29 @@ public:
 
 	UPROPERTY(VisibleAnywhere)
 	class UWeaponComponent* WeaponComp;
+
+protected:
+	// FOV lerp
+	UPROPERTY(EditDefaultsOnly, Category=FOV)
+	float MaxFOV = 90.f;
+
+	UPROPERTY(EditDefaultsOnly, Category=FOV)
+	float MinFOV = 70.f;
+
+	UPROPERTY(EditAnywhere, Category=FOV)
+	float LerpSpeed = 5.f;
+	
+	bool bIsZooming = false;
+	
+	float ZoomStartFOV;
+	float ZoomTargetFOV;
+	
+	float CurrentLerpAlpha = 0.f;
+
+public:
+	UPROPERTY(BlueprintAssignable)
+	FOnZoomInCompleted OnZoomInCompleted;
+	
+	void StartZoom(bool IsAiming);
 	
 };
