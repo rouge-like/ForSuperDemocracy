@@ -12,6 +12,5 @@
 UCLASS()
 class FORSUPERDEMOCRACY_API UPlayerAnimInstance : public UAnimInstance
 {
-	GENERATED_BODY()
-	
+    GENERATED_BODY()
 };
