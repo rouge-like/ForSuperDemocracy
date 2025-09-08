@@ -103,3 +103,10 @@
 - 충돌/팀킬: 팀 구분/피해 최소화 옵션, DamageType 세분화(폭발/화염 등)와 저항치 고려.
 - 기본 값 제안: radius 350, damage 120, fuse 3.0s, projectileSpeed 1600, maxCarry 2.
 - 리플리케이션(후순위): 서버 권위 투척/폭발, 멀티캐스트 VFX/SFX 훅 준비.
+
+## 작업 로그 (2025-09-08)
+- 총기 발사 애니메이션 적용: AHitscanWeapon에서 AnimationSingleNode로 FireAnim 재생 후 원상 복구 타이머 처리.
+- 무기 분리: 히트스캔/프로젝타일 무기 클래스를 분리(AHitscanWeapon / AProjectileWeapon), 공통 로직은 WeaponBase 유지.
+- 수류탄 구현: AGrenade(USphereComponent + UProjectileMovementComponent) 추가, FuseTime(기본 2.0s) 후 UGameplayStatics::SpawnEmitterAtLocation으로 폭발 파티클 스폰 및 Destroy() 자멸 구현.
+- 빌드/종속성: Niagara 제거, Cascade ParticleSystem 사용 경량화.
+- 후속 예정: AProjectileWeapon::FireOnce에서 Grenade 스폰 및 초기 속도/오너 속도 상속/오너 충돌 무시, 예측 궤적(PredictProjectilePath) 적용 및 HUD 표기 연동.

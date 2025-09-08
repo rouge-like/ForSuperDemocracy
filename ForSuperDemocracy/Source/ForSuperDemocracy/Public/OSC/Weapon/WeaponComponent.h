@@ -1,5 +1,3 @@
-// 프로젝트 설정의 설명 페이지에 저작권 공지를 채워주세요.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -33,7 +31,7 @@ public:
     UPROPERTY(BlueprintReadOnly, Category="Weapon")
     TArray<TObjectPtr<AWeaponBase>> WeaponList; // 장착/소지 중인 무기 목록
 	
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable)
     void Equip(int32 idx); // 인덱스 무기 장비 전환(연사 중지 후 교체)
 
 	UFUNCTION(BlueprintCallable)

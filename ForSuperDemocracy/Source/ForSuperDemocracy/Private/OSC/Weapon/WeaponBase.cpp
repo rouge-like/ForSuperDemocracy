@@ -51,8 +51,7 @@ void AWeaponBase::Tick(float DeltaTime)
     }
 
     float RecoverRatio = Data->RecoverDegPerSec * DeltaTime * (bIsFiring ? Data->RecoverWhileFiring : 1.f);
-
-
+    
     if (!PC) return;
     // Pitch 복구
     float StepP = FMath::Min(RecoilPitchToRecover, RecoverRatio);
