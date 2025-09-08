@@ -130,6 +130,7 @@ void ASuperPlayerController::Aiming(const FInputActionValue& Value)
 	if (!bIsAiming)
 	{
 		bIsAiming = true;
+		WeaponComp->StartAiming();
 		
 		// Actor rotation
 		PlayerCharacter->GetCharacterMovement()->bOrientRotationToMovement = false;
@@ -143,6 +144,7 @@ void ASuperPlayerController::Aiming(const FInputActionValue& Value)
 	else
 	{
 		bIsAiming = false;
+		WeaponComp->StopAiming();
 
 		// Actor rotation
 		PlayerCharacter->GetCharacterMovement()->bUseControllerDesiredRotation = false;

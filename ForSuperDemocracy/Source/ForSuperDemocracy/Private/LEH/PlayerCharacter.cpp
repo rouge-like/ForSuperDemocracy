@@ -41,6 +41,10 @@ APlayerCharacter::APlayerCharacter()
 void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	// Weapon 부착
+	FAttachmentTransformRules AttachRules(EAttachmentRule::SnapToTarget, true);
+	ChildActor->AttachToComponent(GetMesh(), AttachRules, FName("hand_r_socket"));
 }
 
 // Called every frame
