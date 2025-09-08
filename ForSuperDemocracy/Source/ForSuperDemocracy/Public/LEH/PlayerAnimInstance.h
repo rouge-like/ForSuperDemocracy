@@ -12,5 +12,14 @@
 UCLASS()
 class FORSUPERDEMOCRACY_API UPlayerAnimInstance : public UAnimInstance
 {
-    GENERATED_BODY()
+	GENERATED_BODY()
+	
+public:
+	virtual void NativeInitializeAnimation() override;
+
+	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
+
+public:
+	UPROPERTY(BlueprintReadOnly)
+	float Speed;
 };

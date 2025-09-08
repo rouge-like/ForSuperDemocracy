@@ -6,6 +6,7 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "LEH/PlayerFSM.h"
+#include "OSC/Weapon/WeaponComponent.h"
 
 // Sets default values
 APlayerCharacter::APlayerCharacter()
@@ -19,7 +20,11 @@ APlayerCharacter::APlayerCharacter()
 	Camera =CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	Camera->SetupAttachment(SpringArm);
 
-	FSM = CreateDefaultSubobject<UPlayerFSM>(TEXT("FSM"));
+	ChildActor = CreateDefaultSubobject<UChildActorComponent>(TEXT("ChildActor"));
+	ChildActor->SetupAttachment(GetMesh());
+	
+	FSMComp = CreateDefaultSubobject<UPlayerFSM>(TEXT("FSMComponent"));
+	WeaponComp = CreateDefaultSubobject<UWeaponComponent>(TEXT("WeaponComponent"));
 	
 	ConstructorHelpers::FObjectFinder<USkeletalMesh> BodyMeshTemp(TEXT("/Script/Engine.SkeletalMesh'/Game/PROJECTS/HELLDIVERS_2/CHARACTERS/PLAYER/B-01_TACTICAL/fix_v2/SKM_B-01_v1_BRAWNY_SIMPLE.SKM_B-01_v1_BRAWNY_SIMPLE'"));
 	if (BodyMeshTemp.Succeeded())
@@ -36,13 +41,35 @@ APlayerCharacter::APlayerCharacter()
 void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	// Weapon 부착
+	FAttachmentTransformRules AttachRules(EAttachmentRule::SnapToTarget, true);
+	ChildActor->AttachToComponent(GetMesh(), AttachRules, FName("hand_r_socket"));
 }
 
 // Called every frame
 void APlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	
+
+	if (bIsZooming)
+	{
+		CurrentLerpAlpha = FMath::Clamp(CurrentLerpAlpha+DeltaTime*LerpSpeed, 0.0f, 1.0f);
+
+		float NewFOV = FMath::Lerp(ZoomStartFOV, ZoomTargetFOV, CurrentLerpAlpha);
+		Camera->SetFieldOfView(NewFOV);
+
+		if (FMath::IsNearlyEqual(CurrentLerpAlpha, 1.f, 0.001f))
+		{
+			if (ZoomTargetFOV == MinFOV)
+			{
+				OnZoomInCompleted.Broadcast();
+			}
+			
+			CurrentLerpAlpha = 0.f;
+			bIsZooming = false;
+		}
+	}
 }
 
 // Called to bind functionality to input
@@ -51,4 +78,23 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 }
+
+void APlayerCharacter::StartZoom(bool IsAiming)
+{
+	bIsZooming = true;
+
+	if (IsAiming)
+	{
+		ZoomStartFOV = Camera->FieldOfView; // 현재 FOV에서 시작
+		ZoomTargetFOV = MinFOV;
+		CurrentLerpAlpha = 0.0f;
+	}
+	else
+	{
+		ZoomStartFOV = Camera->FieldOfView;
+		ZoomTargetFOV = MaxFOV;
+		CurrentLerpAlpha = 0.0f;
+	}
+}
+
 

@@ -28,7 +28,7 @@ void UPlayerFSM::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompo
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	GEngine->AddOnScreenDebugMessage(-1, 1, FColor::Cyan, UEnum::GetValueAsString(mState));
+	GEngine->AddOnScreenDebugMessage(0, 1, FColor::Cyan, UEnum::GetValueAsString(mState));
 	
 	switch (mState)
 	{
