@@ -35,21 +35,12 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 public:
+	EPlayerState GetPlayerState();
+	void SetPlayerState(EPlayerState NewState);
+	
+protected:
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = FSM)
-	EPlayerState mState = EPlayerState::Idle;
+	EPlayerState _State = EPlayerState::Idle;
+
 	
-	// 대기 상태
-	void IdleState();
-	// 이동 상태
-	void MoveState();
-	// 엎드리기, 다이빙
-	void ProneState();
-	// 피격 상태
-	void DamageState();
-	// 죽음 상태
-	void DieState();
-	// 경례 상태
-	void SaluteState();
-	
-	// 플레이어 움직임, 플레이어 애니메이션, TPS 카메라
 };

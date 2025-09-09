@@ -37,7 +37,7 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	class UCameraComponent* Camera;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class UChildActorComponent* ChildActor;
 
 	UPROPERTY(VisibleAnywhere)
@@ -67,6 +67,8 @@ protected:
 public:
 	UPROPERTY(BlueprintAssignable)
 	FOnZoomInCompleted OnZoomInCompleted;
+
+	bool bIsPlayerAiming = false;
 	
 	void StartZoom(bool IsAiming);
 	
