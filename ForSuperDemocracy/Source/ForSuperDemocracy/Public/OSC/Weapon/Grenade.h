@@ -8,7 +8,7 @@
 
 class USphereComponent;
 class UProjectileMovementComponent;
-class UParticleSystem;
+class UNiagaraSystem;
 
 UCLASS()
 class FORSUPERDEMOCRACY_API AGrenade : public AActor
@@ -33,10 +33,18 @@ protected:
     // 퓨즈 시간(초) 후 폭발 FX 스폰 및 자멸
     UPROPERTY(EditDefaultsOnly, Category="Grenade")
     float FuseTime = 2.0f;
-
-    // 폭발 이펙트(파티클 시스템)
-    UPROPERTY(EditDefaultsOnly, Category="Grenade")
-    TObjectPtr<UParticleSystem> ExplosionFX;
+	// 데미지
+	UPROPERTY(EditDefaultsOnly, Category="Grenade")
+	float Damage = 2.0f;
+	// 폭발 범위
+	UPROPERTY(EditDefaultsOnly, Category="Grenade")
+	float Radius = 2.0f;
+	// 미는 힘
+	UPROPERTY(EditDefaultsOnly, Category="Grenade")
+	float Power = 2.0f;
+	// 폭발 이펙트
+	UPROPERTY(EditDefaultsOnly, Category="Grenade")
+	TObjectPtr<UNiagaraSystem> ExplosionVFX;
 
     UFUNCTION()
     void Explode();

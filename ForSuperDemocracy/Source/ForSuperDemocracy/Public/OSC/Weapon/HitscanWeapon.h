@@ -11,6 +11,7 @@
 /**
  * 
  */
+class UNiagaraSystem;
 UCLASS()
 class FORSUPERDEMOCRACY_API AHitscanWeapon : public AWeaponBase
 {
@@ -30,4 +31,13 @@ protected:
 
     UFUNCTION()
     void RestoreWeaponAnimMode();
+
+    // 사격 이펙트
+    UPROPERTY(EditDefaultsOnly, Category="Weapon|VFX")
+    TObjectPtr<UNiagaraSystem> ShotVFX;
+
+    // Optional rotation offset to align VFX forward with muzzle
+    UPROPERTY(EditDefaultsOnly, Category="Weapon|VFX")
+    FRotator ShotVFXRotationOffset = FRotator::ZeroRotator;
 };
+

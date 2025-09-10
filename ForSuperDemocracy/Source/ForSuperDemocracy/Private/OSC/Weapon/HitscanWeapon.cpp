@@ -2,10 +2,10 @@
 
 
 #include "OSC/Weapon/HitscanWeapon.h"
-
 #include "Kismet/GameplayStatics.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Animation/AnimSequenceBase.h"
+#include "NiagaraFunctionLibrary.h"
 
 void AHitscanWeapon::FireOnce()
 {
@@ -62,7 +62,30 @@ void AHitscanWeapon::FireOnce()
 
 	const bool bHit = GetWorld()->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, ECollisionChannel::ECC_Visibility, Params);
 	const FVector ImpactPoint = bHit ? Hit.ImpactPoint : TraceEnd;
+	
+	if (ShotVFX)
+	{
+		// Use muzzle socket world rotation so VFX forward aligns with barrel
+		FRotator MuzzleRot = GetActorRotation();
+		FVector MuzzleLoc = GetMuzzleLocation();
+		if (Mesh && Mesh->DoesSocketExist(MuzzleSocketName))
+		{
+			const FTransform MuzzleTM = Mesh->GetSocketTransform(MuzzleSocketName, ERelativeTransformSpace::RTS_World);
+			MuzzleLoc = MuzzleTM.GetLocation();
+			MuzzleRot = MuzzleTM.Rotator();
+		}
+		// Apply optional asset-specific correction
+		MuzzleRot += ShotVFXRotationOffset;
 
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+			GetWorld(),
+			ShotVFX,
+			MuzzleLoc,
+			MuzzleRot,
+			FVector(0.01f)
+		);
+	}
+	
 #if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
 	// DrawDebugLine(GetWorld(), TraceStart, ImpactPoint, bHit ? FColor::Red : FColor::Green, false, 1.0f, 0, 1.5f);
 	DrawDebugLine(GetWorld(), GetMuzzleLocation(), ImpactPoint, bHit ? FColor::Red : FColor::Green, false, 1.0f, 0, 1.5f);

@@ -110,3 +110,8 @@
 - 수류탄 구현: AGrenade(USphereComponent + UProjectileMovementComponent) 추가, FuseTime(기본 2.0s) 후 UGameplayStatics::SpawnEmitterAtLocation으로 폭발 파티클 스폰 및 Destroy() 자멸 구현.
 - 빌드/종속성: Niagara 제거, Cascade ParticleSystem 사용 경량화.
 - 후속 예정: AProjectileWeapon::FireOnce에서 Grenade 스폰 및 초기 속도/오너 속도 상속/오너 충돌 무시, 예측 궤적(PredictProjectilePath) 적용 및 HUD 표기 연동.
+
+## 작업 로그 (2025-09-10)
+- 메인 모드/HUD: `AMainMode`, `AMainHUD` 추가. `AMainHUD::BeginPlay`에서 `WBP_MainUI`를 생성해 뷰포트에 추가하여 UI 기초 구축.
+- 사격 이펙트: 히트스캔 무기 머즐 `ShotVFX`(Niagara) 스폰, 머즐 소켓 정렬 및 선택적 회전 오프셋 적용.
+- 폭발 이펙트: 수류탄 폭발 시 `ExplosionVFX`(Niagara) 스폰. 퓨즈 타이머 만료 시 자동 실행.

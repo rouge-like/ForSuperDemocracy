@@ -2,6 +2,8 @@
 
 
 #include "OSC/Weapon/Grenade.h"
+
+#include "NiagaraFunctionLibrary.h"
 #include "Components/SphereComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
@@ -51,13 +53,34 @@ void AGrenade::Tick(float DeltaTime)
 void AGrenade::Explode()
 {
     // 폭발 FX 스폰 (Cascade Particle System)
-    if (ExplosionFX)
+    if (ExplosionVFX)
     {
-        UGameplayStatics::SpawnEmitterAtLocation(
+        UNiagaraFunctionLibrary::SpawnSystemAtLocation(
             GetWorld(),
-            ExplosionFX,
+            ExplosionVFX,
             GetActorLocation(),
             GetActorRotation()
+        );
+    }
+
+    // 반경 데미지 적용: 반경 내 모든 Actor에 엔진 데미지 전파 → HealthComponent가 이를 수신해 처리
+    if (UWorld* World = GetWorld())
+    {
+        TArray<AActor*> IgnoreActors;
+        IgnoreActors.Add(this);
+
+        AController* InstigatorController = GetInstigatorController();
+
+        UGameplayStatics::ApplyRadialDamage(
+            World,
+            Damage,
+            GetActorLocation(),
+            Radius,
+            /*DamageType*/ nullptr,
+            IgnoreActors,
+            /*DamageCauser*/ this,
+            InstigatorController,
+            /*bDoFullDamage*/ true
         );
     }
 
