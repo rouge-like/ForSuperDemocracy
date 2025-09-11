@@ -28,53 +28,18 @@ void UPlayerFSM::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompo
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	GEngine->AddOnScreenDebugMessage(-1, 1, FColor::Cyan, UEnum::GetValueAsString(mState));
+	GEngine->AddOnScreenDebugMessage(0, 1, FColor::Cyan, UEnum::GetValueAsString(_State));
 	
-	switch (mState)
-	{
-	case EPlayerState::Idle:
-		IdleState();
-		break;
-	case EPlayerState::Move:
-		MoveState();
-		break;
-	case EPlayerState::Prone:
-		ProneState();
-		break;
-	case EPlayerState::Damage:
-		DamageState();
-		break;
-	case EPlayerState::Die:
-		DieState();
-		break;
-	case EPlayerState::Salute:
-		SaluteState();
-		break;
-	}
 }
 
-void UPlayerFSM::IdleState()
+EPlayerState UPlayerFSM::GetPlayerState()
 {
+	return _State;
 }
 
-void UPlayerFSM::MoveState()
+void UPlayerFSM::SetPlayerState(EPlayerState NewState)
 {
-}
-
-void UPlayerFSM::ProneState()
-{
-}
-
-void UPlayerFSM::DamageState()
-{
-}
-
-void UPlayerFSM::DieState()
-{
-}
-
-void UPlayerFSM::SaluteState()
-{
+	_State = NewState;
 }
 
 
