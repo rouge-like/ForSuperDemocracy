@@ -13,7 +13,7 @@ public class ForSuperDemocracy : ModuleRules
 		
 		// Terminid AI용 모듈
 		PublicDependencyModuleNames.AddRange(new string[] {
-			"AIModule", "NavigationSystem", "GameplayTasks", "GameplayTags"
+			"AIModule", "NavigationSystem", "GameplayTasks", "GameplayTags", "Niagara"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
