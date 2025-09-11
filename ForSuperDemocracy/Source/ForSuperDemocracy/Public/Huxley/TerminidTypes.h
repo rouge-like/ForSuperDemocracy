@@ -15,7 +15,8 @@ enum class ETerminidState : uint8
 	Hurt UMETA(DisplayName = "Hurt"), // 피격 상태 (데미지 후 0.5초 스턴)
 	Death UMETA(DisplayName = "Death"), // 죽음 상태 (사망 처리)
 	Swarm UMETA(DisplayName = "Swarm"), // 군집 상태 (협력 이동)
-	Flee UMETA(DisplayName = "Flee") // 도주 상태 (체력 부족시 도망)
+	Flee UMETA(DisplayName = "Flee"), // 도주 상태 (체력 부족시 도망)
+	Burrow UMETA(DisplayName = "Burrow") // 땅속 숨기 상태 (충돌 없음, 감지 대기)
 };
 
 // Terminid 타입 열거형

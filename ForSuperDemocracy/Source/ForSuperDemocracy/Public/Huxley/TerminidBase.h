@@ -24,6 +24,7 @@ public:
 
 protected:
     virtual void BeginPlay() override;
+    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 public:
     virtual void Tick(float DeltaTime) override;
@@ -63,6 +64,13 @@ public:
     UPROPERTY(BlueprintReadOnly, Category = "Combat")
     bool bCanAttack;
 
+    // 피격 관련 속성
+    UPROPERTY(BlueprintReadOnly, Category = "Combat")
+    float LastHurtTime;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat")
+    float HurtRecoveryTime;
+
     // 애니메이션 관련 속성
     UPROPERTY(BlueprintReadOnly, Category = "Animation")
     bool bIsSpawning;
@@ -72,6 +80,19 @@ public:
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation")
     float SpawnAnimationDuration;
+
+    // Burrow 관련 속성
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Burrow")
+    bool bStartInBurrow;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Burrow")
+    bool bIsBurrowed;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Burrow")
+    float BurrowDetectionRange;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Burrow")
+    float BurrowEmergeDuration;
 
     // 초기화
     UFUNCTION(BlueprintCallable, Category = "Terminid")
@@ -101,6 +122,9 @@ public:
 
     UFUNCTION(BlueprintImplementableEvent, Category = "Behavior")
     void ExecuteFleeBehavior();
+
+    UFUNCTION(BlueprintImplementableEvent, Category = "Behavior")
+    void ExecuteBurrowBehavior();
 
     // 애니메이션 이벤트들 (Blueprint에서 구현)
     UFUNCTION(BlueprintImplementableEvent, Category = "Animation")
@@ -139,6 +163,7 @@ public:
     virtual void ProcessSwarmBehavior(float DeltaTime);
     virtual void ProcessFleeBehavior(float DeltaTime);
     virtual void ProcessDeathBehavior(float DeltaTime);
+    virtual void ProcessBurrowBehavior(float DeltaTime);
 
     // 타겟 관리
     UFUNCTION(BlueprintCallable, Category = "AI")
@@ -179,6 +204,30 @@ public:
     // HealthComponent OnDeath 이벤트 핸들러
     UFUNCTION()
     void OnHealthComponentDeath(AActor* Victim);
+
+    // 피격 상태에서 복원하는 함수
+    UFUNCTION()
+    void RecoverFromHurt();
+
+    // Burrow 관련 함수들
+    UFUNCTION(BlueprintCallable, Category = "Burrow")
+    void StartBurrowState();
+
+    UFUNCTION(BlueprintCallable, Category = "Burrow")
+    void EmergeFromBurrow();
+
+    UFUNCTION(BlueprintPure, Category = "Burrow")
+    bool IsBurrowed() const { return bIsBurrowed; }
+
+    UFUNCTION(BlueprintCallable, Category = "Burrow")
+    void CheckBurrowDetection(float DeltaTime);
+
+    // 레그돌 및 충돌 관리
+    UFUNCTION(BlueprintCallable, Category = "Death")
+    void EnableRagdoll();
+
+    UFUNCTION(BlueprintCallable, Category = "Death")
+    void DisableCollisionWithPlayersAndTerminids();
 
     // 이동 유틸리티
     UFUNCTION(BlueprintCallable, Category = "Movement")
@@ -242,6 +291,12 @@ private:
     
     // 스폰 타이머 핸들
     FTimerHandle SpawnTimerHandle;
+    
+    // 피격 회복 타이머 핸들
+    FTimerHandle HurtRecoveryTimerHandle;
+    
+    // Burrow 이머지 타이머 핸들
+    FTimerHandle BurrowEmergeTimerHandle;
 
 #if WITH_EDITOR
 public:

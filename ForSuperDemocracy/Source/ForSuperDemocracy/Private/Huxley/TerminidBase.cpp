@@ -60,6 +60,14 @@ ATerminidBase::ATerminidBase()
     DistanceToTarget = 0.0f;
     LastAttackTime = 0.0f;
     bCanAttack = true;
+    LastHurtTime = 0.0f;
+    HurtRecoveryTime = 1.5f; // 1.5초 후 복원
+    
+    // Burrow 관련 초기화
+    bStartInBurrow = false;
+    bIsBurrowed = false;
+    BurrowDetectionRange = 800.0f;
+    BurrowEmergeDuration = 2.0f;
     
     // 애니메이션 관련 초기화
     bIsSpawning = false;
@@ -87,6 +95,25 @@ void ATerminidBase::BeginPlay()
     
     // 플레이어 감지 초기화
     LastPlayerDetectionTime = 0.0f;
+    
+    // Burrow 상태 초기화
+    if (bStartInBurrow && TerminidType == ETerminidType::Scavenger)
+    {
+        StartBurrowState();
+    }
+}
+
+void ATerminidBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    // 타이머 정리
+    if (GetWorld())
+    {
+        GetWorld()->GetTimerManager().ClearTimer(SpawnTimerHandle);
+        GetWorld()->GetTimerManager().ClearTimer(HurtRecoveryTimerHandle);
+        GetWorld()->GetTimerManager().ClearTimer(BurrowEmergeTimerHandle);
+    }
+    
+    Super::EndPlay(EndPlayReason);
 }
 
 void ATerminidBase::Tick(float DeltaTime)
@@ -180,8 +207,8 @@ void ATerminidBase::ProcessAttackBehavior(float DeltaTime)
 
 void ATerminidBase::ProcessHurtBehavior(float DeltaTime)
 {
-    // 기본 피격 상태 처리 - 잠시 멈춤
-    StopMovement();
+    // 피격 상태에서는 이동만 중단, 멈추지 않음 (ABP에서 애니메이션 처리)
+    // 복원은 타이머를 통해 자동으로 처리됨
 }
 
 void ATerminidBase::ProcessSwarmBehavior(float DeltaTime)
@@ -207,6 +234,15 @@ void ATerminidBase::ProcessDeathBehavior(float DeltaTime)
 {
     // 기본 죽음 상태 처리 - 이동 정지
     StopMovement();
+}
+
+void ATerminidBase::ProcessBurrowBehavior(float DeltaTime)
+{
+    // Burrow 상태에서는 감지 체크만 수행
+    if (bIsBurrowed)
+    {
+        CheckBurrowDetection(DeltaTime);
+    }
 }
 
 // 타겟 관리
@@ -284,6 +320,12 @@ void ATerminidBase::PerformAttack()
 void ATerminidBase::OnDamaged(float Damage, AActor* DamageCauser, AController* EventInstigator,
     TSubclassOf<UDamageType> DamageType)
 {
+    // 피격 시간 기록
+    LastHurtTime = GetWorld()->GetTimeSeconds();
+    
+    // 기존 타이머 취소
+    GetWorld()->GetTimerManager().ClearTimer(HurtRecoveryTimerHandle);
+    
     // FSM 상태 변경 - Hurt 상태로
     if (StateMachine && IsAlive())
     {
@@ -295,6 +337,15 @@ void ATerminidBase::OnDamaged(float Damage, AActor* DamageCauser, AController* E
     {
         SetCurrentTarget(DamageCauser);
     }
+
+    // 복원 타이머 시작
+    GetWorld()->GetTimerManager().SetTimer(
+        HurtRecoveryTimerHandle,
+        this,
+        &ATerminidBase::RecoverFromHurt,
+        HurtRecoveryTime,
+        false
+    );
 
     // 블루프린트 이벤트 호출
     OnDamageReceived(Damage, DamageCauser);
@@ -312,18 +363,22 @@ void ATerminidBase::OnHealthComponentDeath(AActor* Victim)
     // 이동 정지
     StopMovement();
     
+    // 레그돌 활성화 및 충돌 처리
+    EnableRagdoll();
+    DisableCollisionWithPlayersAndTerminids();
+    
     // 블루프린트 이벤트 호출
     OnDeath();
     
     // 스포너에게 죽음 알림
     HandleDeath();
     
-    // 일정 시간 후 액터 제거
+    // 일정 시간 후 액터 제거 (레그돌 상태 유지를 위해 시간 증가)
     FTimerHandle DeathTimerHandle;
     GetWorld()->GetTimerManager().SetTimer(
         DeathTimerHandle,
         [this]() { Destroy(); },
-        3.0f,
+        10.0f, // 10초 후 제거
         false
     );
 }
@@ -347,6 +402,131 @@ float ATerminidBase::GetHealthPercent() const
 bool ATerminidBase::IsAlive() const
 {
     return Health ? Health->IsAlive() : false;
+}
+
+// 피격 상태에서 복원
+void ATerminidBase::RecoverFromHurt()
+{
+    // 살아있고 현재 Hurt 상태일 때만 복원
+    if (!IsAlive() || !StateMachine)
+    {
+        return;
+    }
+    
+    // 타겟이 있으면 Chase 상태로, 없으면 Idle 상태로 복원
+    if (HasValidTarget())
+    {
+        StateMachine->ChangeState(ETerminidState::Chase);
+    }
+    else
+    {
+        StateMachine->ChangeState(ETerminidState::Idle);
+    }
+    
+    // 타이머 핸들 정리
+    GetWorld()->GetTimerManager().ClearTimer(HurtRecoveryTimerHandle);
+}
+
+// Burrow 관련 함수들
+void ATerminidBase::StartBurrowState()
+{
+    bIsBurrowed = true;
+    
+    // FSM을 Burrow 상태로 변경
+    if (StateMachine)
+    {
+        StateMachine->ChangeState(ETerminidState::Burrow);
+    }
+    
+    // 충돌 비활성화 (플레이어와 다른 Terminid와 충돌 안함)
+    GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+    GetMesh()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+    
+    // 블루프린트 이벤트 호출 (숨기 애니메이션)
+    ExecuteBurrowBehavior();
+}
+
+void ATerminidBase::EmergeFromBurrow()
+{
+    // 이머지 애니메이션 시작
+    GetWorld()->GetTimerManager().SetTimer(
+        BurrowEmergeTimerHandle,
+        [this]() {
+            // 이머지 완료 후 처리
+            bIsBurrowed = false;
+            
+            // 충돌 활성화
+            GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
+            GetMesh()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
+            
+            // Idle 상태로 전환하여 정상 AI 시작
+            if (StateMachine)
+            {
+                StateMachine->ChangeState(ETerminidState::Idle);
+            }
+            
+            GetWorld()->GetTimerManager().ClearTimer(BurrowEmergeTimerHandle);
+        },
+        BurrowEmergeDuration,
+        false
+    );
+}
+
+void ATerminidBase::CheckBurrowDetection(float DeltaTime)
+{
+    if (!bIsBurrowed)
+    {
+        return;
+    }
+    
+    // 플레이어 감지
+    APawn* NearestPlayer = FindNearestPlayer();
+    if (NearestPlayer)
+    {
+        float Distance = FVector::Dist(GetActorLocation(), NearestPlayer->GetActorLocation());
+        if (Distance <= BurrowDetectionRange)
+        {
+            // 플레이어가 감지 범위에 들어오면 이머지
+            EmergeFromBurrow();
+        }
+    }
+}
+
+// 레그돌 및 충돌 관리
+void ATerminidBase::EnableRagdoll()
+{
+    USkeletalMeshComponent* MeshComp = GetMesh();
+    if (MeshComp)
+    {
+        // 레그돌 활성화
+        MeshComp->SetCollisionProfileName(TEXT("Ragdoll"));
+        MeshComp->SetSimulatePhysics(true);
+        MeshComp->WakeAllRigidBodies();
+        MeshComp->bBlendPhysics = true;
+        
+        // CharacterMovementComponent 비활성화
+        UCharacterMovementComponent* CharMovement = GetCharacterMovement();
+        if (CharMovement)
+        {
+            CharMovement->DisableMovement();
+            CharMovement->StopMovementImmediately();
+        }
+    }
+}
+
+void ATerminidBase::DisableCollisionWithPlayersAndTerminids()
+{
+    // CapsuleComponent의 Pawn 충돌 비활성화 (플레이어와 다른 Terminid)
+    GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+    
+    // 메시는 World Static과만 충돌 (바닥에 떨어뜨리기 위해)
+    USkeletalMeshComponent* MeshComp = GetMesh();
+    if (MeshComp)
+    {
+        MeshComp->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+        MeshComp->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
+        MeshComp->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Block);
+    }
 }
 
 // 이동 유틸리티
