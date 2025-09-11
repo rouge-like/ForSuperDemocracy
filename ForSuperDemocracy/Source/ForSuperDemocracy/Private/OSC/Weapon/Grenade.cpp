@@ -64,26 +64,21 @@ void AGrenade::Explode()
     }
 
     // 반경 데미지 적용: 반경 내 모든 Actor에 엔진 데미지 전파 → HealthComponent가 이를 수신해 처리
-    if (UWorld* World = GetWorld())
-    {
-        TArray<AActor*> IgnoreActors;
-        IgnoreActors.Add(this);
-
-        AController* InstigatorController = GetInstigatorController();
-
-        UGameplayStatics::ApplyRadialDamage(
-            World,
-            Damage,
-            GetActorLocation(),
-            Radius,
-            /*DamageType*/ nullptr,
-            IgnoreActors,
-            /*DamageCauser*/ this,
-            InstigatorController,
-            /*bDoFullDamage*/ true
-        );
-    }
-
+    TArray<AActor*> IgnoreActors;
+    IgnoreActors.Add(this);
+    AController* InstigatorController = GetInstigatorController();
+    UGameplayStatics::ApplyRadialDamage(
+        GetWorld(),
+        Damage,
+        GetActorLocation(),
+        Radius,
+        /*DamageType*/ nullptr,
+        IgnoreActors,
+        /*DamageCauser*/ this,
+        InstigatorController,
+        /*bDoFullDamage*/ true
+    );
+    DrawDebugSphere(GetWorld(), GetActorLocation(), Radius, 100, FColor::Yellow, false, 1.0f, 0);
     Destroy();
 }
 

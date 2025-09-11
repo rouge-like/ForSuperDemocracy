@@ -89,6 +89,7 @@ void AHitscanWeapon::FireOnce()
 #if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
 	// DrawDebugLine(GetWorld(), TraceStart, ImpactPoint, bHit ? FColor::Red : FColor::Green, false, 1.0f, 0, 1.5f);
 	DrawDebugLine(GetWorld(), GetMuzzleLocation(), ImpactPoint, bHit ? FColor::Red : FColor::Green, false, 1.0f, 0, 1.5f);
+	DrawDebugSphere(GetWorld(),ImpactPoint, 10, 0, FColor::Yellow, false, 1.0f, 0);
 #endif
 
 	if (bHit && Hit.GetActor())
