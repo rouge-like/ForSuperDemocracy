@@ -170,7 +170,11 @@ public:
     virtual void PerformAttack();
 
     // Unreal Engine TakeDamage 오버라이드
-    virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+    UFUNCTION()
+    void OnDamaged(float Damage, AActor* DamageCauser, AController* EventInstigator, TSubclassOf<UDamageType> DamageType);
+
+    UPROPERTY()
+    class UHealthComponent* Health;
 
     UFUNCTION(BlueprintImplementableEvent, Category = "Combat")
     void OnDamageReceived(float DamageAmount, AActor* DamageSource);

@@ -60,7 +60,7 @@ void AHitscanWeapon::FireOnce()
 	Params.AddIgnoredActor(this);
 	if (GetOwner()) Params.AddIgnoredActor(GetOwner());
 
-	const bool bHit = GetWorld()->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, ECollisionChannel::ECC_Visibility, Params);
+	const bool bHit = GetWorld()->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, ECollisionChannel::ECC_GameTraceChannel1, Params);
 	const FVector ImpactPoint = bHit ? Hit.ImpactPoint : TraceEnd;
 	
 	if (ShotVFX)

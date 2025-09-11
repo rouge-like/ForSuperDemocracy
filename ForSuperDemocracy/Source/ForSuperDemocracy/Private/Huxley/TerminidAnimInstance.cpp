@@ -33,11 +33,6 @@ UTerminidAnimInstance::UTerminidAnimInstance()
     HurtMontage = nullptr;
 }
 
-void UTerminidAnimInstance::BeginPlay()
-{
-    Super::BeginPlay();
-}
-
 void UTerminidAnimInstance::NativeInitializeAnimation()
 {
     Super::NativeInitializeAnimation();

@@ -10,6 +10,7 @@
 #include "Engine/World.h"
 #include "TimerManager.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "OSC/HealthComponent.h"
 
 ATerminidBase::ATerminidBase()
 {
@@ -80,6 +81,9 @@ void ATerminidBase::BeginPlay()
     
     // 플레이어 감지 초기화
     LastPlayerDetectionTime = 0.0f;
+
+    Health = Cast<UHealthComponent>(GetComponentByClass(UHealthComponent::StaticClass()));
+    Health->OnDamaged.AddDynamic(this, &ATerminidBase::OnDamaged);
 }
 
 void ATerminidBase::Tick(float DeltaTime)
@@ -268,39 +272,54 @@ void ATerminidBase::PerformAttack()
     // 실제 데미지는 파생 클래스에서 구현
 }
 
-float ATerminidBase::TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+void ATerminidBase::OnDamaged(float Damage, AActor* DamageCauser, AController* EventInstigator,
+    TSubclassOf<UDamageType> DamageType)
 {
-    if (!IsAlive())
-    {
-        return 0.0f;
-    }
-    
-    float ActualDamage = Damage;
-    CurrentHealth = FMath::Clamp(CurrentHealth - ActualDamage, 0.0f, BaseStats.Health);
-    
-    // 블루프린트 이벤트 호출
-    OnDamageReceived(ActualDamage, DamageCauser);
-    
-    // FSM 상태 변경 - Hurt 상태로
-    if (StateMachine && IsAlive())
-    {
-        StateMachine->ChangeState(ETerminidState::Hurt);
-    }
-    
-    // 죽음 처리
-    if (CurrentHealth <= 0.0f)
-    {
-        Die();
-    }
-    
+    // if (StateMachine && IsAlive())
+    // {
+    //     StateMachine->ChangeState(ETerminidState::Hurt);
+    // }
+
     // 데미지를 준 적을 타겟으로 설정
     if (DamageCauser && !CurrentTarget)
     {
         SetCurrentTarget(DamageCauser);
     }
-    
-    return ActualDamage;
 }
+
+// float ATerminidBase::TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+// {
+//     if (!IsAlive())
+//     {
+//         return 0.0f;
+//     }
+//     
+//     float ActualDamage = Damage;
+//     CurrentHealth = FMath::Clamp(CurrentHealth - ActualDamage, 0.0f, BaseStats.Health);
+//     
+//     // 블루프린트 이벤트 호출
+//     OnDamageReceived(ActualDamage, DamageCauser);
+//     
+//     // FSM 상태 변경 - Hurt 상태로
+//     if (StateMachine && IsAlive())
+//     {
+//         StateMachine->ChangeState(ETerminidState::Hurt);
+//     }
+//     
+//     // 죽음 처리
+//     if (CurrentHealth <= 0.0f)
+//     {
+//         Die();
+//     }
+//     
+//     // 데미지를 준 적을 타겟으로 설정
+//     if (DamageCauser && !CurrentTarget)
+//     {
+//         SetCurrentTarget(DamageCauser);
+//     }
+//     
+//     return ActualDamage;
+// }
 
 // 이동 유틸리티
 void ATerminidBase::MoveTowardsTarget(float DeltaTime)
