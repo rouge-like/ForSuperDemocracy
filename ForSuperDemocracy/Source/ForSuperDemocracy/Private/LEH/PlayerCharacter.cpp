@@ -5,6 +5,7 @@
 
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "LEH/PlayerFSM.h"
 #include "OSC/Weapon/WeaponComponent.h"
 
@@ -95,6 +96,28 @@ void APlayerCharacter::StartZoom(bool IsAiming)
 		ZoomTargetFOV = MaxFOV;
 		CurrentLerpAlpha = 0.0f;
 	}
+}
+
+FVector APlayerCharacter::GetCameraAim()
+{
+	FVector AimStart = FVector::ZeroVector;
+	FRotator AimRot = FRotator::ZeroRotator;
+
+	auto c = GetController();
+	if (c)
+		c->GetPlayerViewPoint(AimStart, AimRot);
+
+	FHitResult Hit;
+	FVector AimDirection = AimRot.Vector(); // 카메라 Forward
+	FVector AimTarget = AimStart + AimDirection * 10000.0f;
+	
+	bool bHit = GetWorld()->LineTraceSingleByChannel(Hit, AimStart, AimTarget, ECC_Visibility);
+	if (bHit)
+	{
+		DrawDebugSphere(GetWorld(), Hit.ImpactPoint, 100, 1, FColor::Yellow);
+		return Hit.ImpactPoint;
+	}
+	return AimTarget;
 }
 
 

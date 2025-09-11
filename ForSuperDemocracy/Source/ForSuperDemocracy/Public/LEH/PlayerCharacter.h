@@ -67,9 +67,12 @@ protected:
 public:
 	UPROPERTY(BlueprintAssignable)
 	FOnZoomInCompleted OnZoomInCompleted;
-
-	bool bIsPlayerAiming = false;
 	
 	void StartZoom(bool IsAiming);
-	
+
+public:
+	// Aiming control rig
+	bool bIsPlayerAiming = false;
+
+	FVector GetCameraAim();
 };
