@@ -74,3 +74,5 @@ ForSuperDemocracy/Plugins/**/Intermediate/*
 
 # Cache files for the editor to use
 ForSuperDemocracy/DerivedDataCache/*
+CLAUDE.md
+.claude/settings.local.json

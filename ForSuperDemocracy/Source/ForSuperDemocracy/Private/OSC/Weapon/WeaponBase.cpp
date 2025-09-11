@@ -9,6 +9,9 @@
 #include "Engine/World.h"
 #include "DrawDebugHelpers.h"
 #include "GameFramework/Character.h"
+#include "OSC/MainHUD.h"
+#include "OSC/UI/MainUI.h"
+#include "OSC/UI/WeaponWidget.h"
 
 // 기본값 설정
 AWeaponBase::AWeaponBase()
@@ -51,8 +54,7 @@ void AWeaponBase::Tick(float DeltaTime)
     }
 
     float RecoverRatio = Data->RecoverDegPerSec * DeltaTime * (bIsFiring ? Data->RecoverWhileFiring : 1.f);
-
-
+    
     if (!PC) return;
     // Pitch 복구
     float StepP = FMath::Min(RecoilPitchToRecover, RecoverRatio);
@@ -91,6 +93,8 @@ void AWeaponBase::StartFire()
 void AWeaponBase::StopFire()
 {
     bIsFiring = false;
+
+    ShowBullet();
 }
 
 void AWeaponBase::StartReload()
@@ -165,6 +169,16 @@ void AWeaponBase::EndReload()
 
 void AWeaponBase::ShowBullet() const
 {
+    auto* hud = GetWorld()->GetFirstPlayerController()->GetHUD();
+    if (hud)
+    {
+        AMainHUD* mainHUD = Cast<AMainHUD>(hud);
+        if (mainHUD)
+        {
+            mainHUD->GetMainUI()->GetWeaponWidget()->SetCurrentAmmo(GetCurrentAmmo());
+            mainHUD->GetMainUI()->GetWeaponWidget()->SetMaxAmmo(WC->GetReserveAmmo(Data->AmmoType));
+        }
+    }
     if(GEngine) GEngine->AddOnScreenDebugMessage(1, 1.5f, FColor::Green, FString::Printf(TEXT("Bullet %d / %d"), GetCurrentAmmo(), WC->GetReserveAmmo(Data->AmmoType)));
 }
 
@@ -177,55 +191,6 @@ void AWeaponBase::FireOnce()
     
     // 탄약 소모
     CurrentAmmo = FMath::Max(0, CurrentAmmo - 1);
-
-    // 단일 라인트레이스로 피격 판정 및 데미지 적용
-    FVector TraceStart = GetMuzzleLocation();
-    FRotator ViewRot = GetFireRotation();
-
-    if (const APawn* P = Cast<APawn>(GetOwner()))
-    {
-        if (const AController* C = P->GetController())
-        {
-            C->GetPlayerViewPoint(TraceStart, ViewRot);
-        }
-    }
-    
-
-    // 조준 방향 주변 원뿔(콘) 내에서 스프레드를 적용해 발사 방향 산출
-    FVector AimDir = ViewRot.Vector();
-    float SpreadDeg = Data ? GetCurrentSpreadDegrees() : 0.f;
-    if (SpreadDeg > KINDA_SMALL_NUMBER)
-    {
-        const float SpreadRad = FMath::DegreesToRadians(SpreadDeg);
-        AimDir = FMath::VRandCone(AimDir, SpreadRad);
-    }
-    const FVector TraceEnd = TraceStart + AimDir * MaxRange;
-
-    FHitResult Hit;
-    FCollisionQueryParams Params(SCENE_QUERY_STAT(WeaponFireTrace), false, this);
-    Params.AddIgnoredActor(this);
-    if (GetOwner()) Params.AddIgnoredActor(GetOwner());
-
-    const bool bHit = GetWorld()->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, ECollisionChannel::ECC_Visibility, Params);
-    const FVector ImpactPoint = bHit ? Hit.ImpactPoint : TraceEnd;
-
-#if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
-    // DrawDebugLine(GetWorld(), TraceStart, ImpactPoint, bHit ? FColor::Red : FColor::Green, false, 1.0f, 0, 1.5f);
-    DrawDebugLine(GetWorld(), GetMuzzleLocation(), ImpactPoint, bHit ? FColor::Red : FColor::Green, false, 1.0f, 0, 1.5f);
-#endif
-
-    if (bHit && Hit.GetActor())
-    {
-        AActor* HitActor = Hit.GetActor();
-        const FVector ShotDir = (ImpactPoint - GetMuzzleLocation()).GetSafeNormal();
-        AController* InstigatorController = nullptr;
-        if (APawn* P = Cast<APawn>(GetOwner()))
-        {
-            InstigatorController = P->GetController();
-        }
-        UGameplayStatics::ApplyPointDamage(HitActor, Data ? Data->Damage : 0.f, ShotDir, Hit, InstigatorController, this, UDamageType::StaticClass());
-        
-    }
 
     ShowBullet();
 

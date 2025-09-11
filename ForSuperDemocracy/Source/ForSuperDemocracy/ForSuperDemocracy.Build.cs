@@ -8,9 +8,20 @@ public class ForSuperDemocracy : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "UMG" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput" });
+		
+		
+		// Terminid AI용 모듈
+		PublicDependencyModuleNames.AddRange(new string[] {
+			"AIModule", "NavigationSystem", "GameplayTasks", "GameplayTags"
+		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
+		
+		
+		// ModuleDirectory path로 잡도록 추가 (Rider에러 방지)
+		PublicIncludePaths.Add(ModuleDirectory);
+		PrivateIncludePaths.Add(ModuleDirectory);
 
 		// Uncomment if you are using Slate UI
 		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });

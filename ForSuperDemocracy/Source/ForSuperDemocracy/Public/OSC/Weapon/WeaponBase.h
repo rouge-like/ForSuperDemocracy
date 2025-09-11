@@ -45,7 +45,7 @@ protected:
 
     FTimerHandle TimerHandle_Reload;
 
-    void FireOnce();              // 1발 발사 처리
+    virtual void FireOnce();              // 1발 발사 처리
     bool CanFire() const;         // 발사 가능 조건 체크(재장전/탄 수 등)
 
     FVector GetMuzzleLocation() const; // 머즐 위치 조회
@@ -63,12 +63,6 @@ protected:
     UPROPERTY(EditDefaultsOnly)
     FAimViewParams AimViewParams; // 무기 자체에 바인딩된 ADS 파라미터(옵션)
 
-    UPROPERTY()
-    TObjectPtr<AActor> Target;    // 최근 조준 트레이스에서 획득한 타깃(옵션)
-
-    UPROPERTY(BlueprintReadOnly)
-    FVector TargetWS;             // 최근 타깃 월드 좌표(옵션)
-
     // Recoil/Spread state
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Weapon|Spread")
     float CurrentBloom = 0.f;     // 누적 블룸(연사 시 증가, 시간 경과로 회복)
@@ -85,9 +79,9 @@ public:
     virtual void Tick(float DeltaTime) override;
 
     void RegisterWeaponComponent(UWeaponComponent* wc);
-    void StartFire();
-    void StopFire();
-    void StartReload();
+    virtual void StartFire();
+    virtual void StopFire();
+    virtual void StartReload();
 
     UFUNCTION(BlueprintCallable, Category="Weapon")
     int32 GetCurrentAmmo() const { return CurrentAmmo; }

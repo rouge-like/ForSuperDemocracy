@@ -110,7 +110,8 @@ void UHealthComponent::ApplyDamageInternal(float Damage, AActor* DamageCauser, A
     if (CurrentHealth <= 0.f && bCanDie)
     {
         OnDeath.Broadcast(GetOwner());
+        if(GEngine) GEngine->AddOnScreenDebugMessage(3, 1.5f, FColor::Green, FString::Printf(TEXT("%s DEAD"), *GetOwner()->GetActorNameOrLabel())); // 디버그: 현재 HP 출력
     }
 
-    if(GEngine) GEngine->AddOnScreenDebugMessage(2, 1.5f, FColor::Green, FString::Printf(TEXT("%s HP %.f / %.f"), *GetOwner()->GetActorNameOrLabel(), MaxHealth, CurrentHealth)); // 디버그: 현재 HP 출력
+    if(GEngine) GEngine->AddOnScreenDebugMessage(2, 1.5f, FColor::Green, FString::Printf(TEXT("%s HP %.f / %.f"), *GetOwner()->GetActorNameOrLabel(), CurrentHealth, MaxHealth)); // 디버그: 현재 HP 출력
 }

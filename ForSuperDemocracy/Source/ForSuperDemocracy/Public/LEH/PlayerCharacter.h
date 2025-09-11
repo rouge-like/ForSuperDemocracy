@@ -30,20 +30,21 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 public:
+	void OnConstruction(const FTransform& Transform) override;
 	// Components
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(EditAnywhere)
 	class USpringArmComponent* SpringArm;
 	
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(EditAnywhere)
 	class UCameraComponent* Camera;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class UChildActorComponent* ChildActor;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(EditAnywhere)
 	class UPlayerFSM* FSMComp;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	class UWeaponComponent* WeaponComp;
 
 protected:

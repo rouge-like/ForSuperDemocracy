@@ -47,7 +47,6 @@
 - 작업 진행 상황과 문서를 주기적으로 갱신.
 
 ---
-- 마무리 자동화 성(Codex CLI)
 
 ## 작업 로그 (2025-09-04)
 - 재장전/발사 로직 및 발사 주기(RPM) 조정 완료.
@@ -66,9 +65,53 @@
 - 캐릭터/컨트롤러: PlayerCharacter(SpringArm/Camera/FSM) + SuperPlayerController(Move/Look/Sprint) 기본 구현.
 - 통합 미흡: WeaponComponent 캐릭터 부착/입력 바인딩(발사/재장전/조준), ADS 보간/정렬, HUD/UMG 연동, Input 에셋 연결 상태 확인 필요.
 
-## 오늘 TODO (2025-09-06)
+## 일일 TODO (2025-09-06)
 - 입력 바인딩: 컨트롤러에 IA_Fire/IA_Reload/IA_Aim(시작/종료) 바인딩, WeaponComponent의 StartFire/StopFire/Reload/StartAiming/StopAiming 연결.
 - 무기 컴포넌트 통합: PlayerCharacter에 WeaponComponent 추가, ChildActor 무기 자동 등록, 시작 탄약 풀 초기화.
 - ADS/카메라: 조준 중 UpdateAimAlignment 호출, FAimViewParams로 카메라(FOV/암 길이/오프셋) 보간 적용.
 - HUD 임시화: 체력/탄약 표시용 간단 위젯 또는 디버그 HUD 추가, HealthComponent 이벤트/탄약 표시 연동.
 - 맵/에셋 확인: ProtoMap 및 IMC/IA 입력 에셋 존재/링크 점검(없으면 생성/연결).
+
+## 작업 로그 (2025-09-05)
+- 46309e9 HealthComponent + ApplyDamage 추가: 체력 컴포넌트(Any/PointDamage 바인딩) 도입, 무기 데미지 흐름 연결, IMC/IA 입력 에셋 경로 재구성, ProtoMap/캐릭터 BP 반영.
+
+## 작업 로그 (2025-09-07)
+- 7874cfd NOTE 업데이트 및 반동 초안: 반동/스프레드 데이터·로직 초안 적용, 문서 갱신.
+- 964c098 주석 정리: Weapon/Health 관련 헤더·CPP 주석 보강, IMC_Weapon 에셋 미세 업데이트.
+- 60bcac1 총기 반동 복구 구현: 즉시 킥 + 틱 기반 서서히 복귀(자연스러운 TPS 감각), Rifle 데이터 튜닝.
+- 98a71d9 Merge main→OSC: 충돌 없이 통합.
+
+## 설계 변경 요약(반동/스프레드)
+- ADS 전용 사격: 허리사격 비활성, 스프레드/반동 단일 파라미터로 단순화.
+- 스프레드/블룸: BaseSpread + CurrentBloom, 발당 증가/초당 회복. 라인트레이스에 VRandCone 적용.
+- 반동(카메라): 발사 시 즉시 소량 킥, Tick에서 초당 복구 속도로 원조준에 서서히 복귀.
+
+## 오늘 TODO (2025-09-07)
+- 반동 튜닝: 무기별 Pitch/Yaw 범위, 복구 속도(RecoilRecoverDegPerSec) 값 조정 및 플레이 테스트.
+- 데이터 정리: 기존 무기 데이터에 BaseSpread/SpreadMax/Recovery 값 적용, 불필요한 Hip/ADS 분기 제거 확인.
+- 입력/ADS 게이팅 재확인: ADS 아닐 때 사격 금지 로직 검증(WeaponComponent::StartFire).
+- 성능/체감: 디버그 라인/메시 임시 유지로 명중 정렬·복구 체감 점검, 과도시 값 보정.
+- 문서/채널 동기화: 깃-관리 요약과 본 문서 로그 일치 유지.
+
+## 내일 TODO (2025-09-08) — 특수무기: 수류탄(Grenade)
+- 시스템 설계: 투척 무기 파이프라인 정의(WeaponComponent 확장 또는 GrenadeComponent 별도 구성).
+- 입력: `IA_ThrowGrenade` 추가 및 컨트롤러 바인딩(탭: 즉시 투척, 홀드: 조리 Cook 후 투척).
+- 데이터: `UGrenadeData`(DataAsset) 설계(fuseTime, radius, damage, projectileSpeed, maxCarry, bCookable, VFX/SFX, DamageType).
+- 액터: `AGrenadeProjectile` 구현(StaticMesh/ProjectileMovement 또는 PhysicsSim, 퓨즈 타이머, 충돌 시/퓨즈 만료 시 폭발 → `UGameplayStatics::ApplyRadialDamage`).
+- 투척 플로우: 궤적 프리뷰(`UKismetSystemLibrary::PredictProjectilePath`), 소유자 근접 자폭 방지(짧은 무적/IgnoreOwner 시간), 카메라 충돌/안전거리 확보.
+- 인벤토리/HUD: 소지 수량(획득/소모), HUD 표기(잔량/쿨다운), 입력 불가 상태 처리.
+- 충돌/팀킬: 팀 구분/피해 최소화 옵션, DamageType 세분화(폭발/화염 등)와 저항치 고려.
+- 기본 값 제안: radius 350, damage 120, fuse 3.0s, projectileSpeed 1600, maxCarry 2.
+- 리플리케이션(후순위): 서버 권위 투척/폭발, 멀티캐스트 VFX/SFX 훅 준비.
+
+## 작업 로그 (2025-09-08)
+- 총기 발사 애니메이션 적용: AHitscanWeapon에서 AnimationSingleNode로 FireAnim 재생 후 원상 복구 타이머 처리.
+- 무기 분리: 히트스캔/프로젝타일 무기 클래스를 분리(AHitscanWeapon / AProjectileWeapon), 공통 로직은 WeaponBase 유지.
+- 수류탄 구현: AGrenade(USphereComponent + UProjectileMovementComponent) 추가, FuseTime(기본 2.0s) 후 UGameplayStatics::SpawnEmitterAtLocation으로 폭발 파티클 스폰 및 Destroy() 자멸 구현.
+- 빌드/종속성: Niagara 제거, Cascade ParticleSystem 사용 경량화.
+- 후속 예정: AProjectileWeapon::FireOnce에서 Grenade 스폰 및 초기 속도/오너 속도 상속/오너 충돌 무시, 예측 궤적(PredictProjectilePath) 적용 및 HUD 표기 연동.
+
+## 작업 로그 (2025-09-10)
+- 메인 모드/HUD: `AMainMode`, `AMainHUD` 추가. `AMainHUD::BeginPlay`에서 `WBP_MainUI`를 생성해 뷰포트에 추가하여 UI 기초 구축.
+- 사격 이펙트: 히트스캔 무기 머즐 `ShotVFX`(Niagara) 스폰, 머즐 소켓 정렬 및 선택적 회전 오프셋 적용.
+- 폭발 이펙트: 수류탄 폭발 시 `ExplosionVFX`(Niagara) 스폰. 퓨즈 타이머 만료 시 자동 실행.
