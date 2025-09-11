@@ -3,6 +3,7 @@
 
 #include "LEH/PlayerAnimInstance.h"
 
+#include "GameFramework/PawnMovementComponent.h"
 #include "LEH/PlayerCharacter.h"
 #include "LEH/PlayerFSM.h"
 #include "LEH/SuperPlayerController.h"
@@ -27,21 +28,20 @@ void UPlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		_PlayerState = PlayerFSM->GetPlayerState();
 	}
 	
-	// 속도 갱신 
-	FVector Velocity = Owner->GetVelocity();
-	FVector Foward = Owner->GetActorForwardVector();
-	Speed = FVector::DotProduct(Velocity, Foward);
-	//Speed = Velocity.Size();
-
-	// 방향 갱신
-	Direction = CalculateDirection(Velocity, Owner->GetActorRotation());
-	//UE_LOG(LogTemp, Warning, TEXT("%f"), Speed);
-	//UE_LOG(LogTemp, Warning, TEXT("%f"), Direction);
-
-	// Aiming
 	APlayerCharacter* PlayerCharacter = Cast<APlayerCharacter>(Owner);
 	if (PlayerCharacter)
 	{
+		FVector velocity = PlayerCharacter->GetVelocity();
+		FVector forward = PlayerCharacter->GetActorForwardVector();
+		FVector right = PlayerCharacter->GetActorRightVector();
+
+		// 속도 갱신 
+		Speed = FVector::DotProduct(velocity, forward);
+
+		// 방향 갱신
+		Direction = FVector::DotProduct(velocity, right);
+
+		// Aiming
 		bIsAiming = PlayerCharacter->bIsPlayerAiming;
 		AimingLocation = PlayerCharacter->GetCameraAim();
 	}

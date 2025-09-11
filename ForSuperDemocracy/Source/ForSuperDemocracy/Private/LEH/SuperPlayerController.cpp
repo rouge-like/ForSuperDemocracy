@@ -117,11 +117,20 @@ void ASuperPlayerController::Look(const FInputActionValue& Value)
 
 void ASuperPlayerController::SprintStart(const FInputActionValue& Value)
 {
+	if (bIsAiming)
+	{
+		return;
+	}
 	PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed += SpeedIncreaseValue;
 }
 
 void ASuperPlayerController::SprintEnd(const FInputActionValue& Value)
 {
+	if (bIsAiming)
+	{
+		return;
+	}
+	
 	PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed -= SpeedIncreaseValue;
 }
 
