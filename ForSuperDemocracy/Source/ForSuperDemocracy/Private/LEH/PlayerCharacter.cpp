@@ -98,26 +98,21 @@ void APlayerCharacter::StartZoom(bool IsAiming)
 	}
 }
 
-FVector APlayerCharacter::GetCameraAim()
+FRotator APlayerCharacter::GetCameraAim()
 {
-	FVector AimStart = FVector::ZeroVector;
-	FRotator AimRot = FRotator::ZeroRotator;
-
-	auto c = GetController();
-	if (c)
-		c->GetPlayerViewPoint(AimStart, AimRot);
-
-	FHitResult Hit;
-	FVector AimDirection = AimRot.Vector(); // 카메라 Forward
-	FVector AimTarget = AimStart + AimDirection * 10000.0f;
+	FVector Location;
+	FRotator Rotation;
 	
-	bool bHit = GetWorld()->LineTraceSingleByChannel(Hit, AimStart, AimTarget, ECC_Visibility);
-	if (bHit)
+	if (GetController())
 	{
-		DrawDebugSphere(GetWorld(), Hit.ImpactPoint, 100, 1, FColor::Yellow);
-		return Hit.ImpactPoint;
+		GetController()->GetPlayerViewPoint(Location, Rotation);
+		//UE_LOG(LogTemp, Warning, TEXT("%f, %f, %f"), Rotation.Roll, Rotation.Pitch, Rotation.Yaw);
+		
+		return Rotation;
 	}
-	return AimTarget;
+
+	// 컨트롤러가 없는 경우(예: AI에 의해 제어될 때)를 위한 대체 동작
+	return GetBaseAimRotation();
 }
 
 

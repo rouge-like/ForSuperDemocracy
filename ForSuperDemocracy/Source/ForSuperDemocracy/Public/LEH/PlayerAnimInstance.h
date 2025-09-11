@@ -38,6 +38,6 @@ public:
 	bool bIsAiming;
 
 	UPROPERTY(BlueprintReadOnly)
-	FVector AimingLocation; 
+	FRotator AimingLocation; 
 	
 };

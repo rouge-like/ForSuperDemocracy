@@ -74,5 +74,5 @@ public:
 	// Aiming control rig
 	bool bIsPlayerAiming = false;
 
-	FVector GetCameraAim();
+	FRotator GetCameraAim();
 };

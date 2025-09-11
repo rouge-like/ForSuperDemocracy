@@ -35,8 +35,8 @@ void UPlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 
 	// 방향 갱신
 	Direction = CalculateDirection(Velocity, Owner->GetActorRotation());
-	UE_LOG(LogTemp, Warning, TEXT("%f"), Speed);
-	UE_LOG(LogTemp, Warning, TEXT("%f"), Direction);
+	//UE_LOG(LogTemp, Warning, TEXT("%f"), Speed);
+	//UE_LOG(LogTemp, Warning, TEXT("%f"), Direction);
 
 	// Aiming
 	APlayerCharacter* PlayerCharacter = Cast<APlayerCharacter>(Owner);
