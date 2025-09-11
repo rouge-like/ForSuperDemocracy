@@ -63,6 +63,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = Input)
 	class UInputAction* AimingAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input)
+	float SpeedDecreaseValue = 200.f;
+
 public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = UI)
 	TSubclassOf<class UUserWidget> CrossHairWidgetClass;

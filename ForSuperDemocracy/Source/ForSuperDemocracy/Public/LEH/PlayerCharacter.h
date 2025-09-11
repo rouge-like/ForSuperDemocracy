@@ -37,7 +37,7 @@ public:
 	UPROPERTY(EditAnywhere)
 	class UCameraComponent* Camera;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class UChildActorComponent* ChildActor;
 
 	UPROPERTY(EditAnywhere)
@@ -69,5 +69,10 @@ public:
 	FOnZoomInCompleted OnZoomInCompleted;
 	
 	void StartZoom(bool IsAiming);
-	
+
+public:
+	// Aiming control rig
+	bool bIsPlayerAiming = false;
+
+	FVector GetCameraAim();
 };

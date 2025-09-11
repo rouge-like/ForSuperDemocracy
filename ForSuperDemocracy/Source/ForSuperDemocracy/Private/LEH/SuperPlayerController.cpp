@@ -95,7 +95,7 @@ void ASuperPlayerController::MoveStart(const FInputActionValue& Value)
 {
 	if (IsValid(PlayerFSMComp))
 	{
-		PlayerFSMComp->mState = EPlayerState::Move;
+		PlayerFSMComp->SetPlayerState(EPlayerState::Move);
 	}
 }
 
@@ -103,7 +103,7 @@ void ASuperPlayerController::MoveEnd(const FInputActionValue& Value)
 {
 	if (IsValid(PlayerFSMComp))
 	{
-		PlayerFSMComp->mState = EPlayerState::Idle;
+		PlayerFSMComp->SetPlayerState(EPlayerState::Idle);
 	}
 }
 
@@ -130,6 +130,9 @@ void ASuperPlayerController::Aiming(const FInputActionValue& Value)
 	if (!bIsAiming)
 	{
 		bIsAiming = true;
+		PlayerCharacter->bIsPlayerAiming = true;
+		PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed -= SpeedDecreaseValue;
+		
 		WeaponComp->StartAiming();
 		
 		// Actor rotation
@@ -144,6 +147,9 @@ void ASuperPlayerController::Aiming(const FInputActionValue& Value)
 	else
 	{
 		bIsAiming = false;
+		PlayerCharacter->bIsPlayerAiming = false;
+		PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed += SpeedDecreaseValue;
+		
 		WeaponComp->StopAiming();
 
 		// Actor rotation
