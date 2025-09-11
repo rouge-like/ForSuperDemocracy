@@ -37,9 +37,6 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stats")
     FTerminidStats BaseStats;
 
-    UPROPERTY(BlueprintReadOnly, Category = "Stats")
-    float CurrentHealth;
-
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI")
     ETerminidType TerminidType;
 
@@ -173,11 +170,15 @@ public:
     UFUNCTION()
     void OnDamaged(float Damage, AActor* DamageCauser, AController* EventInstigator, TSubclassOf<UDamageType> DamageType);
 
-    UPROPERTY()
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Health")
     class UHealthComponent* Health;
 
     UFUNCTION(BlueprintImplementableEvent, Category = "Combat")
     void OnDamageReceived(float DamageAmount, AActor* DamageSource);
+
+    // HealthComponent OnDeath 이벤트 핸들러
+    UFUNCTION()
+    void OnHealthComponentDeath(AActor* Victim);
 
     // 이동 유틸리티
     UFUNCTION(BlueprintCallable, Category = "Movement")
@@ -209,18 +210,18 @@ public:
     UFUNCTION(BlueprintPure, Category = "AI")
     bool IsPlayerInDetectionRange(APawn* Player) const;
 
-    // 유틸리티 함수들
+    // 유틸리티 함수들 - HealthComponent 기반
     UFUNCTION(BlueprintPure, Category = "Stats")
-    FORCEINLINE float GetCurrentHealth() const { return CurrentHealth; }
+    float GetCurrentHealth() const;
 
     UFUNCTION(BlueprintPure, Category = "Stats")
-    FORCEINLINE float GetMaxHealth() const { return BaseStats.Health; }
+    float GetMaxHealth() const;
 
     UFUNCTION(BlueprintPure, Category = "Stats")
-    FORCEINLINE float GetHealthPercent() const { return CurrentHealth / BaseStats.Health; }
+    float GetHealthPercent() const;
 
     UFUNCTION(BlueprintPure, Category = "Stats")
-    FORCEINLINE bool IsAlive() const { return CurrentHealth > 0.0f; }
+    bool IsAlive() const;
 
     UFUNCTION(BlueprintPure, Category = "AI")
     FORCEINLINE bool ShouldFlee() const { return GetHealthPercent() < 0.3f; }

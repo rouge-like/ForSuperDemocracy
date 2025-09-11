@@ -44,12 +44,14 @@ ATerminidBase::ATerminidBase()
     // FSM 컴포넌트 설정
     StateMachine = CreateDefaultSubobject<UTerminidFSM>(TEXT("StateMachine"));
 
+    // HealthComponent 생성
+    Health = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
+
     // AI Controller 설정
     AIControllerClass = ATerminidAIController::StaticClass();
     AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 
     // 기본값 초기화
-    CurrentHealth = 100.0f;
     TerminidType = ETerminidType::Scavenger;
     ParentSpawner = nullptr;
     CurrentTarget = nullptr;
@@ -69,8 +71,12 @@ void ATerminidBase::BeginPlay()
 {
     Super::BeginPlay();
     
-    // 현재 체력을 기본 스탯으로 초기화
-    CurrentHealth = BaseStats.Health;
+    // HealthComponent 초기화 및 이벤트 바인딩
+    if (Health)
+    {
+        Health->OnDamaged.AddDynamic(this, &ATerminidBase::OnDamaged);
+        Health->OnDeath.AddDynamic(this, &ATerminidBase::OnHealthComponentDeath);
+    }
     
     // 이동 속도를 스탯에 맞게 설정
     UCharacterMovementComponent* CharMovement = GetCharacterMovement();
@@ -81,9 +87,6 @@ void ATerminidBase::BeginPlay()
     
     // 플레이어 감지 초기화
     LastPlayerDetectionTime = 0.0f;
-
-    Health = Cast<UHealthComponent>(GetComponentByClass(UHealthComponent::StaticClass()));
-    Health->OnDamaged.AddDynamic(this, &ATerminidBase::OnDamaged);
 }
 
 void ATerminidBase::Tick(float DeltaTime)
@@ -123,7 +126,13 @@ void ATerminidBase::InitializeTerminid(const FTerminidStats& Stats, ETerminidTyp
 {
     BaseStats = Stats;
     TerminidType = Type;
-    CurrentHealth = BaseStats.Health;
+    
+    // HealthComponent 초기화
+    if (Health)
+    {
+        // HealthComponent의 MaxHealth 설정이 필요하다면 여기에 추가
+        // Health->MaxHealth = BaseStats.Health; // HealthComponent에서 해당 속성이 Protected이면 수정 불가
+    }
     
     // 이동 속도 적용
     UCharacterMovementComponent* CharMovement = GetCharacterMovement();
@@ -275,51 +284,70 @@ void ATerminidBase::PerformAttack()
 void ATerminidBase::OnDamaged(float Damage, AActor* DamageCauser, AController* EventInstigator,
     TSubclassOf<UDamageType> DamageType)
 {
-    // if (StateMachine && IsAlive())
-    // {
-    //     StateMachine->ChangeState(ETerminidState::Hurt);
-    // }
+    // FSM 상태 변경 - Hurt 상태로
+    if (StateMachine && IsAlive())
+    {
+        StateMachine->ChangeState(ETerminidState::Hurt);
+    }
 
     // 데미지를 준 적을 타겟으로 설정
     if (DamageCauser && !CurrentTarget)
     {
         SetCurrentTarget(DamageCauser);
     }
+
+    // 블루프린트 이벤트 호출
+    OnDamageReceived(Damage, DamageCauser);
 }
 
-// float ATerminidBase::TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
-// {
-//     if (!IsAlive())
-//     {
-//         return 0.0f;
-//     }
-//     
-//     float ActualDamage = Damage;
-//     CurrentHealth = FMath::Clamp(CurrentHealth - ActualDamage, 0.0f, BaseStats.Health);
-//     
-//     // 블루프린트 이벤트 호출
-//     OnDamageReceived(ActualDamage, DamageCauser);
-//     
-//     // FSM 상태 변경 - Hurt 상태로
-//     if (StateMachine && IsAlive())
-//     {
-//         StateMachine->ChangeState(ETerminidState::Hurt);
-//     }
-//     
-//     // 죽음 처리
-//     if (CurrentHealth <= 0.0f)
-//     {
-//         Die();
-//     }
-//     
-//     // 데미지를 준 적을 타겟으로 설정
-//     if (DamageCauser && !CurrentTarget)
-//     {
-//         SetCurrentTarget(DamageCauser);
-//     }
-//     
-//     return ActualDamage;
-// }
+// HealthComponent OnDeath 이벤트 핸들러
+void ATerminidBase::OnHealthComponentDeath(AActor* Victim)
+{
+    // FSM 상태를 Death로 변경
+    if (StateMachine)
+    {
+        StateMachine->ChangeState(ETerminidState::Death);
+    }
+    
+    // 이동 정지
+    StopMovement();
+    
+    // 블루프린트 이벤트 호출
+    OnDeath();
+    
+    // 스포너에게 죽음 알림
+    HandleDeath();
+    
+    // 일정 시간 후 액터 제거
+    FTimerHandle DeathTimerHandle;
+    GetWorld()->GetTimerManager().SetTimer(
+        DeathTimerHandle,
+        [this]() { Destroy(); },
+        3.0f,
+        false
+    );
+}
+
+// HealthComponent 기반 유틸리티 함수들
+float ATerminidBase::GetCurrentHealth() const
+{
+    return Health ? Health->GetHealthPercent() * GetMaxHealth() : 0.0f;
+}
+
+float ATerminidBase::GetMaxHealth() const
+{
+    return BaseStats.Health;
+}
+
+float ATerminidBase::GetHealthPercent() const
+{
+    return Health ? Health->GetHealthPercent() : 0.0f;
+}
+
+bool ATerminidBase::IsAlive() const
+{
+    return Health ? Health->IsAlive() : false;
+}
 
 // 이동 유틸리티
 void ATerminidBase::MoveTowardsTarget(float DeltaTime)
@@ -355,7 +383,7 @@ void ATerminidBase::StopMovement()
     }
 }
 
-// 죽음 및 생명주기
+// 죽음 및 생명주기 - HealthComponent를 통해 처리
 void ATerminidBase::Die()
 {
     if (!IsAlive())
@@ -363,31 +391,11 @@ void ATerminidBase::Die()
         return;
     }
     
-    CurrentHealth = 0.0f;
-    
-    // FSM 상태를 Death로 변경
-    if (StateMachine)
+    // HealthComponent의 Kill 함수를 호출하여 죽음 처리
+    if (Health)
     {
-        StateMachine->ChangeState(ETerminidState::Death);
+        Health->Kill();
     }
-    
-    // 이동 정지
-    StopMovement();
-    
-    // 블루프린트 이벤트 호출
-    OnDeath();
-    
-    // 스포너에게 죽음 알림
-    HandleDeath();
-    
-    // 일정 시간 후 액터 제거
-    FTimerHandle DeathTimerHandle;
-    GetWorld()->GetTimerManager().SetTimer(
-        DeathTimerHandle,
-        [this]() { Destroy(); },
-        3.0f,
-        false
-    );
 }
 
 // 플레이어 감지 (기본 FSM 방식)
@@ -562,7 +570,7 @@ void ATerminidBase::PostEditChangeProperty(FPropertyChangedEvent& PropertyChange
         
         if (PropertyName == GET_MEMBER_NAME_CHECKED(ATerminidBase, BaseStats))
         {
-            CurrentHealth = BaseStats.Health;
+            // HealthComponent 최대체력은 HealthComponent 내부에서 관리
             UCharacterMovementComponent* CharMovement = GetCharacterMovement();
             if (CharMovement)
             {
