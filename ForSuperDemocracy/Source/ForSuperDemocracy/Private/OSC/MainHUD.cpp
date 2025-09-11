@@ -2,7 +2,7 @@
 
 
 #include "OSC/MainHUD.h"
-
+#include "OSC/UI/MainUI.h"
 #include "Blueprint/UserWidget.h"
 
 void AMainHUD::BeginPlay()
@@ -11,7 +11,7 @@ void AMainHUD::BeginPlay()
 
 	if (MainUIClass)
 	{
-		MainUI = CreateWidget<UUserWidget>(GetWorld(), MainUIClass);
+		MainUI = CreateWidget<UMainUI>(GetWorld(), MainUIClass);
 		if (MainUI)
 		{
 			MainUI->AddToViewport(0);

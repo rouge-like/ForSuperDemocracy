@@ -30,6 +30,7 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 public:
+	void OnConstruction(const FTransform& Transform) override;
 	// Components
 	UPROPERTY(EditAnywhere)
 	class USpringArmComponent* SpringArm;

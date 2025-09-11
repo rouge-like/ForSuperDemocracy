@@ -9,6 +9,9 @@
 #include "Engine/World.h"
 #include "DrawDebugHelpers.h"
 #include "GameFramework/Character.h"
+#include "OSC/MainHUD.h"
+#include "OSC/UI/MainUI.h"
+#include "OSC/UI/WeaponWidget.h"
 
 // 기본값 설정
 AWeaponBase::AWeaponBase()
@@ -90,6 +93,8 @@ void AWeaponBase::StartFire()
 void AWeaponBase::StopFire()
 {
     bIsFiring = false;
+
+    ShowBullet();
 }
 
 void AWeaponBase::StartReload()
@@ -164,6 +169,16 @@ void AWeaponBase::EndReload()
 
 void AWeaponBase::ShowBullet() const
 {
+    auto* hud = GetWorld()->GetFirstPlayerController()->GetHUD();
+    if (hud)
+    {
+        AMainHUD* mainHUD = Cast<AMainHUD>(hud);
+        if (mainHUD)
+        {
+            mainHUD->GetMainUI()->GetWeaponWidget()->SetCurrentAmmo(GetCurrentAmmo());
+            mainHUD->GetMainUI()->GetWeaponWidget()->SetMaxAmmo(WC->GetReserveAmmo(Data->AmmoType));
+        }
+    }
     if(GEngine) GEngine->AddOnScreenDebugMessage(1, 1.5f, FColor::Green, FString::Printf(TEXT("Bullet %d / %d"), GetCurrentAmmo(), WC->GetReserveAmmo(Data->AmmoType)));
 }
 

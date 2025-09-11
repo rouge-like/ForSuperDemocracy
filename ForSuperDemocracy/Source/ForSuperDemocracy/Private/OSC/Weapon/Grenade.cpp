@@ -78,7 +78,7 @@ void AGrenade::Explode()
         InstigatorController,
         /*bDoFullDamage*/ true
     );
-    DrawDebugSphere(GetWorld(), GetActorLocation(), Radius, 100, FColor::Yellow, false, 1.0f, 0);
+    DrawDebugSphere(GetWorld(), GetActorLocation(), Radius, 10, FColor::Yellow, false, 1.0f, 0);
     Destroy();
 }
 

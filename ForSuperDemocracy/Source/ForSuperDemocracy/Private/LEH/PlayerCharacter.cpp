@@ -20,7 +20,7 @@ APlayerCharacter::APlayerCharacter()
 	
 	Camera =CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	Camera->SetupAttachment(SpringArm);
-
+	
 	ChildActor = CreateDefaultSubobject<UChildActorComponent>(TEXT("ChildActor"));
 	ChildActor->SetupAttachment(GetMesh());
 	
@@ -44,8 +44,8 @@ void APlayerCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	// Weapon 부착
-	FAttachmentTransformRules AttachRules(EAttachmentRule::SnapToTarget, true);
-	ChildActor->AttachToComponent(GetMesh(), AttachRules, FName("hand_r_socket"));
+	// FAttachmentTransformRules AttachRules(EAttachmentRule::SnapToTarget, true);
+	// ChildActor->AttachToComponent(GetMesh(), AttachRules, FName("hand_r_socket"));
 }
 
 // Called every frame
@@ -78,6 +78,19 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
+}
+
+void APlayerCharacter::OnConstruction(const FTransform& Transform)
+{
+	Super::OnConstruction(Transform);
+	
+	FAttachmentTransformRules AttachRules(EAttachmentRule::SnapToTarget, true);
+	ChildActor->AttachToComponent(GetMesh(), AttachRules, FName("hand_r_socket"));
+	ChildActor->CreateChildActor();
+	ChildActor->GetChildActor()->SetOwner(this);
+	ChildActor->GetChildActor()->SetInstigator(this);
+	ChildActor->SetRelativeLocation(FVector(-0.5f, 8.5f, -1.0f));
+	ChildActor->SetRelativeRotation(FRotator(0, 0, 0));
 }
 
 void APlayerCharacter::StartZoom(bool IsAiming)

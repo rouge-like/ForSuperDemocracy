@@ -23,7 +23,10 @@ struct FAimViewParams
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="ADS")
     FVector SocketOffset;         // 카메라 소켓 오프셋(좌/우/상하 미세 조정)
-
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="ADS")
+	FVector TargetOffset;         // 카메라 타겟 오프셋(좌/우/상하 미세 조정)
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="ADS")
     float InterpSpeed;            // 보간 속도(값이 클수록 빠르게 전환)
 };

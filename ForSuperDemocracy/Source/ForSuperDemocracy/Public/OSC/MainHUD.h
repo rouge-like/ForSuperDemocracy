@@ -6,6 +6,7 @@
 #include "GameFramework/HUD.h"
 #include "MainHUD.generated.h"
 
+class UMainUI;
 /**
  * 
  */
@@ -21,9 +22,12 @@ public:
 protected:
 	// WBP_MainUI를 할당할 클래스
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
-	TSubclassOf<UUserWidget> MainUIClass;
+	TSubclassOf<UMainUI> MainUIClass;
 
 	// 생성된 위젯 인스턴스
 	UPROPERTY()
-	TObjectPtr<UUserWidget> MainUI;
+	TObjectPtr<UMainUI> MainUI;
+
+public:
+	UMainUI* GetMainUI(){ return MainUI; }
 };
