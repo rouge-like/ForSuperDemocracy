@@ -115,3 +115,17 @@
 - 메인 모드/HUD: `AMainMode`, `AMainHUD` 추가. `AMainHUD::BeginPlay`에서 `WBP_MainUI`를 생성해 뷰포트에 추가하여 UI 기초 구축.
 - 사격 이펙트: 히트스캔 무기 머즐 `ShotVFX`(Niagara) 스폰, 머즐 소켓 정렬 및 선택적 회전 오프셋 적용.
 - 폭발 이펙트: 수류탄 폭발 시 `ExplosionVFX`(Niagara) 스폰. 퓨즈 타이머 만료 시 자동 실행.
+
+## 작업 로그 (2025-09-11)
+- 수류탄: `AGrenade::Explode()`에 `UGameplayStatics::ApplyRadialDamage` 적용(반경 데미지). 퓨즈 타이머 만료 후 폭발, `DrawDebugSphere`로 데미지 반경 시각화, `ExplosionVFX`(Niagara) 스폰.
+- 무기 UI: `UWeaponWidget` 구현(텍스트 바인딩: `CurrentAmmo/MaxAmmo/CurrentGrenade/MaxGrenade`). `AMainHUD`에서 `UMainUI` 생성·뷰포트 추가, `AWeaponBase::ShowBullet()`에서 현재 탄/예비탄을 HUD 경유로 갱신.
+- 무기 베이스/컴포넌트: `AWeaponBase`에 연사 타이밍/재장전 타이머/반동·블룸 누적·회복 로직 추가. `UWeaponComponent`가 ChildActor 무기 자동 등록, 탄약 풀(`PullAmmo`/`GetReserveAmmo`) 관리, ADS 게이팅, 장비 전환 및 사격·재장전 위임.
+- 히트스캔/프로젝타일: `AHitscanWeapon` 라인트레이스(커스텀 채널 `Hitscan`) + 포인트 데미지 적용, 발사 애니메이션(AnimSingleNode) 재생 후 원상 복구, 머즐 VFX 스폰. `AProjectileWeapon`은 `AGrenade` 스폰, 초기 속도 부여, 오너 충돌 무시 처리.
+- 플레이어/컨트롤: `ASuperPlayerController` Enhanced Input 바인딩(이동/보기/질주/조준/발사/재장전). 조준 시 `APlayerCharacter::StartZoom`으로 FOV 보간 및 이동속도 조정, ADS 상태에서만 사격 허용, 조준 완료 시 크로스헤어 표시.
+- 몬스터/체력: `UHealthComponent`가 Any/Point/Radial 데미지 바인딩과 체력 변화/사망 이벤트 브로드캐스트 구현. `ATerminidBase`가 `OnDamaged` 연결로 피격시 타겟 설정 등 FSM 연계 기반 마련.
+
+### 후속 예정/주의
+- 게임 시작 시 탄약 UI 초기화 루틴 추가(무기 등록 직후 1회 갱신 필요).
+- 수류탄 보유량 UI(`SetGrenade/InitWeapons`) 실제 데이터와 연결.
+- `ATerminidBase::BeginPlay()`에서 `Health` null 체크 보강(컴포넌트 미부착 크래시 방지).
+- HUD/GameMode 설정에서 `AMainHUD` 지정 상태 확인.

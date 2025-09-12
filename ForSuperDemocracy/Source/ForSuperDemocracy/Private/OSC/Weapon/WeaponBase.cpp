@@ -188,7 +188,7 @@ void AWeaponBase::FireOnce()
         return;
 
     FiringTime = 0;
-    
+    OnFired.Broadcast();
     // 탄약 소모
     CurrentAmmo = FMath::Max(0, CurrentAmmo - 1);
 
