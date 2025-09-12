@@ -9,6 +9,21 @@
 #include "LEH/SuperPlayerController.h"
 
 
+UPlayerAnimInstance::UPlayerAnimInstance()
+{
+	ConstructorHelpers::FObjectFinder<UAnimMontage> ReloadTemp(TEXT("/Script/Engine.AnimMontage'/Game/LEH/Animations/AM_Reload.AM_Reload'"));
+	if (ReloadTemp.Succeeded())
+	{
+		ReloadMontage = ReloadTemp.Object;
+	}
+
+	ConstructorHelpers::FObjectFinder<UAnimMontage> FireTemp(TEXT("/Script/Engine.AnimMontage'/Game/LEH/Animations/AM_Fire.AM_Fire'"));
+	if (FireTemp.Succeeded())
+	{
+		FireMontage = FireTemp.Object;
+	}
+}
+
 void UPlayerAnimInstance::NativeInitializeAnimation()
 {
 	Super::NativeInitializeAnimation();
@@ -46,4 +61,15 @@ void UPlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		AimingLocation = PlayerCharacter->GetCameraAim();
 	}
 		
+}
+
+void UPlayerAnimInstance::PlayReloadAnimation()
+{
+	//StopAllMontages();
+	Montage_Play(ReloadMontage);
+}
+
+void UPlayerAnimInstance::PlayFireAnimation()
+{
+	Montage_Play(FireMontage);
 }

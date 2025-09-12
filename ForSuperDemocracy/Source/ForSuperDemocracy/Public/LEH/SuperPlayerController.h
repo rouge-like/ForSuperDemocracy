@@ -51,8 +51,11 @@ protected:
 	void SprintStart(const FInputActionValue& Value);
 	void SprintEnd(const FInputActionValue& Value);
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input)
-	float SpeedIncreaseValue = 300.f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Speed)
+	float SprintSpeed = 900.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Speed)
+	float WalkSpeed = 600.f;
 
 protected:
 	/////////////// IMC_Weapon
@@ -63,8 +66,8 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = Input)
 	class UInputAction* AimingAction;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input)
-	float SpeedDecreaseValue = 200.f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Speed)
+	float AimingSpeed = 300.f;
 
 public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = UI)
@@ -76,6 +79,9 @@ public:
 	bool bIsAiming = false;
 
 	void Aiming(const FInputActionValue& Value);
+
+	void AimingStart(const FInputActionValue& Value);
+	void AimingEnd(const FInputActionValue& Value);
 	
 	UFUNCTION()
 	void CrossHairWidgetOn();
@@ -91,5 +97,10 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = Input)
 	class UInputAction* ReloadAction;
 
+	bool bIsReloading = false;
+
+	UPROPERTY(EditAnywhere, Category = Reload)
+	float ReloadingTime = 2.2f;
+	
 	void Reload(const FInputActionValue& Value);
 };

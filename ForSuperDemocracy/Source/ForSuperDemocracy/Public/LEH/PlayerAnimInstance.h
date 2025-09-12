@@ -16,6 +16,8 @@ class FORSUPERDEMOCRACY_API UPlayerAnimInstance : public UAnimInstance
 	GENERATED_BODY()
 	
 public:
+	UPlayerAnimInstance();
+	
 	virtual void NativeInitializeAnimation() override;
 
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
@@ -38,6 +40,18 @@ public:
 	bool bIsAiming;
 
 	UPROPERTY(BlueprintReadOnly)
-	FRotator AimingLocation; 
+	FRotator AimingLocation;
+
+public:
+	// Anim montage
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category=PlayerAnim)
+	class UAnimMontage* ReloadMontage;
+
+	void PlayReloadAnimation();
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category=PlayerAnim)
+	class UAnimMontage* FireMontage;
+	
+	void PlayFireAnimation();
 	
 };

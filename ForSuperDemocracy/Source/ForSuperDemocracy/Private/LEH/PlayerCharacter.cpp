@@ -6,7 +6,9 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "LEH/PlayerAnimInstance.h"
 #include "LEH/PlayerFSM.h"
+#include "LEH/SuperPlayerController.h"
 #include "OSC/Weapon/WeaponComponent.h"
 
 // Sets default values
@@ -126,6 +128,31 @@ FRotator APlayerCharacter::GetCameraAim()
 
 	// 컨트롤러가 없는 경우(예: AI에 의해 제어될 때)를 위한 대체 동작
 	return GetBaseAimRotation();
+}
+
+void APlayerCharacter::PlayReloadMontage()
+{
+	// Aim 중 reload 시 aim해제
+	ASuperPlayerController* PC = Cast<ASuperPlayerController>(GetController());
+	if (PC && PC->bIsAiming)
+	{
+		PC->AimingEnd(0);
+	}
+	
+	auto anim = Cast<UPlayerAnimInstance>(GetMesh()->GetAnimInstance());
+	if (anim)
+	{
+		anim->PlayReloadAnimation();
+	}
+}
+
+void APlayerCharacter::PlayFireMontage()
+{
+	auto anim = Cast<UPlayerAnimInstance>(GetMesh()->GetAnimInstance());
+	if (anim)
+	{
+		anim->PlayFireAnimation();
+	}
 }
 
 
