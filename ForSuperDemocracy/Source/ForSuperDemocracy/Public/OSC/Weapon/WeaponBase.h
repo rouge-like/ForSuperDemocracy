@@ -11,7 +11,7 @@
 class USkeletalMeshComponent;
 class UWeaponComponent;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnFired);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnFired, AWeaponBase*, Weapon);
 
 UCLASS()
 class FORSUPERDEMOCRACY_API AWeaponBase : public AActor

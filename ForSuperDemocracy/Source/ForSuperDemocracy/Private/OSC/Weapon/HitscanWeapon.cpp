@@ -6,6 +6,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Animation/AnimSequenceBase.h"
 #include "NiagaraFunctionLibrary.h"
+#include "NiagaraComponent.h"
 
 void AHitscanWeapon::FireOnce()
 {
@@ -43,8 +44,6 @@ void AHitscanWeapon::FireOnce()
 			C->GetPlayerViewPoint(TraceStart, ViewRot);
 		}
 	}
-    
-
 	// 조준 방향 주변 원뿔(콘) 내에서 스프레드를 적용해 발사 방향 산출
 	FVector AimDir = ViewRot.Vector();
 	float SpreadDeg = Data ? GetCurrentSpreadDegrees() : 0.f;
@@ -65,25 +64,20 @@ void AHitscanWeapon::FireOnce()
 	
 	if (ShotVFX)
 	{
-		// Use muzzle socket world rotation so VFX forward aligns with barrel
-		FRotator MuzzleRot = GetActorRotation();
-		FVector MuzzleLoc = GetMuzzleLocation();
-		if (Mesh && Mesh->DoesSocketExist(MuzzleSocketName))
-		{
-			const FTransform MuzzleTM = Mesh->GetSocketTransform(MuzzleSocketName, ERelativeTransformSpace::RTS_World);
-			MuzzleLoc = MuzzleTM.GetLocation();
-			MuzzleRot = MuzzleTM.Rotator();
-		}
-		// Apply optional asset-specific correction
-		MuzzleRot += ShotVFXRotationOffset;
-
-		UNiagaraFunctionLibrary::SpawnSystemAtLocation(
-			GetWorld(),
+		UNiagaraComponent* NiagaraComp = UNiagaraFunctionLibrary::SpawnSystemAttached(
 			ShotVFX,
-			MuzzleLoc,
-			MuzzleRot,
-			FVector(0.01f)
+			Mesh,
+			MuzzleSocketName,
+			FVector::ZeroVector,
+			FRotator::ZeroRotator,
+			EAttachLocation::SnapToTarget,
+			true,
+			true
 		);
+		if (NiagaraComp && !ShotVFXRotationOffset.IsNearlyZero())
+		{
+			NiagaraComp->SetRelativeRotation(ShotVFXRotationOffset);
+		}
 	}
 	
 #if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
