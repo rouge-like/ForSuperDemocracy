@@ -5,6 +5,7 @@
 
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "OSC/Weapon/Grenade.h"
+#include "OSC/Weapon/ProjectileBase.h"
 
 void AProjectileWeapon::FireOnce()
 {
