@@ -11,6 +11,8 @@
 class USkeletalMeshComponent;
 class UWeaponComponent;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnFired);
+
 UCLASS()
 class FORSUPERDEMOCRACY_API AWeaponBase : public AActor
 {
@@ -88,4 +90,7 @@ public:
     
     const FAimViewParams& GetAimViewParams() const { return AimViewParams; }
     void SetAiming(bool aiming) { bIsAiming = aiming; }
+
+    // 델리게이트
+    FOnFired OnFired;
 };
