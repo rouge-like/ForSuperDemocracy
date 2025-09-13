@@ -7,6 +7,9 @@
 #include "WeaponComponent.generated.h"
 
 class AWeaponBase;
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponFired, AWeaponBase*, Weapon);
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class FORSUPERDEMOCRACY_API UWeaponComponent : public UActorComponent
 {
@@ -60,15 +63,19 @@ public:
 
     UFUNCTION(BlueprintPure, Category="Weapon|ADS")
     bool IsAiming() const { return bIsAiming; } // 현재 ADS 상태 여부
-
-    // Returns ADS params of currently equipped weapon (fallbacks to component defaults if unavailable)
+	
     UFUNCTION(BlueprintPure, Category="Weapon|ADS")
     const FAimViewParams& GetAimViewParams() const { return WeaponList[CurrentIdx]->GetAimViewParams(); } // 현재 무기 ADS 파라미터
-
+	
+	UPROPERTY(BlueprintAssignable)
+	FOnWeaponFired OnWeaponFired; // 총기 발사 델리게이트
 private:
     UPROPERTY(VisibleAnywhere, Category="Weapon|ADS")
     bool bIsAiming = false; // ADS 상태 플래그(사격 게이팅)
 
     UPROPERTY(EditAnywhere, Category="Weapon|ADS")
     FAimViewParams AimViewParams; // 컴포넌트 기본 ADS 파라미터(무기 미제공 시 사용)
+
+	UFUNCTION()
+	void HandleWeaponFired(AWeaponBase* Weapon);
 };

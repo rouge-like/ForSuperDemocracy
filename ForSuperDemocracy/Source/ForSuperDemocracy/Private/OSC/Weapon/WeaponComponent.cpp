@@ -96,9 +96,11 @@ void UWeaponComponent::RegisterWeapon(AWeaponBase* Weapon)
     {
         Weapon->SetOwner(GetOwner()); // 무기 오너를 컴포넌트 오너로 통일
     }
+    
     Weapon->RegisterWeaponComponent(this); // 상호 참조 등록(탄약 풀/상태 공유)
     WeaponList.AddUnique(Weapon);
-    
+
+    Weapon->OnFired.AddUniqueDynamic(this, &UWeaponComponent::HandleWeaponFired);
 }
 
 int32 UWeaponComponent::GetReserveAmmo(EAmmoType type)
@@ -120,4 +122,9 @@ void UWeaponComponent::StopAiming()
 
     StopFire(); // ADS 해제 시 즉시 사격 중단
     WeaponList[CurrentIdx]->SetAiming(bIsAiming);
+}
+
+void UWeaponComponent::HandleWeaponFired(AWeaponBase* Weapon)
+{
+    OnWeaponFired.Broadcast(Weapon);
 }
