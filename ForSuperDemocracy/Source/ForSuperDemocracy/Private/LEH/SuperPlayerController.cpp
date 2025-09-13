@@ -62,7 +62,6 @@ void ASuperPlayerController::SetupInputComponent()
 		// Aiming
 		EnhancedInput->BindAction(AimingAction, ETriggerEvent::Started, this, &ASuperPlayerController::AimingStart);
 		EnhancedInput->BindAction(AimingAction, ETriggerEvent::Completed, this, &ASuperPlayerController::AimingEnd);
-
 		
 		// Fire
 		EnhancedInput->BindAction(FireAction, ETriggerEvent::Started, this, &ASuperPlayerController::FireStart);
@@ -70,6 +69,9 @@ void ASuperPlayerController::SetupInputComponent()
 
 		// Reload
 		EnhancedInput->BindAction(ReloadAction, ETriggerEvent::Started, this, &ASuperPlayerController::Reload);
+
+		// Reload
+		EnhancedInput->BindAction(DiveAction, ETriggerEvent::Started, this, &ASuperPlayerController::Dive);
 	}
 }
 
@@ -227,4 +229,11 @@ void ASuperPlayerController::Reload(const FInputActionValue& Value)
 	{
 		WeaponComp->Reload();
 	}
+}
+
+void ASuperPlayerController::Dive(const FInputActionValue& Value)
+{
+	PlayerFSMComp->SetPlayerState(EPlayerState::Prone);
+	
+	
 }

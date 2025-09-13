@@ -103,4 +103,10 @@ public:
 	float ReloadingTime = 2.2f;
 	
 	void Reload(const FInputActionValue& Value);
+	
+	// Dive
+	UPROPERTY(EditDefaultsOnly, Category = Input)
+    class UInputAction* DiveAction;
+	
+	void Dive(const FInputActionValue& Value);
 };
