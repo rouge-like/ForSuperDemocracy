@@ -77,9 +77,7 @@ public:
 	UUserWidget* CrossHairWidget;
 	
 	bool bIsAiming = false;
-
-	void Aiming(const FInputActionValue& Value);
-
+	
 	void AimingStart(const FInputActionValue& Value);
 	void AimingEnd(const FInputActionValue& Value);
 	
