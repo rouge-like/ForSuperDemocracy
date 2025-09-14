@@ -13,7 +13,6 @@
 #include "GameFramework/Character.h"
 #include "Components/CapsuleComponent.h"
 #include "TimerManager.h"
-// #include "TimerManager.h" // no longer needed after ragdoll rollback
 
 // 컴포넌트 기본값 설정(틱 활성화 등)
 UHealthComponent::UHealthComponent()
@@ -181,7 +180,7 @@ void UHealthComponent::HandleRadialDamage(AActor* DamagedActor, float Damage, co
     }
 
     // 데미지 비례 임펄스 적용 (Origin 반대 방향으로 가속 변화)
-    FVector Dir = Mesh->GetComponentLocation() - Origin;
+    FVector Dir = Mesh->GetComponentLocation() - Origin - FVector(0,0,500.f);
     if (!Dir.IsNearlyZero())
     {
         Dir = Dir.GetSafeNormal();
@@ -308,7 +307,7 @@ void UHealthComponent::ApplyDamageInternal(float Damage, AActor* DamageCauser, A
     CurrentHealth = FMath::Clamp(Old - Damage, 0.f, MaxHealth);
 
     OnDamaged.Broadcast(Damage, DamageCauser, InstigatedBy, DamageType ? DamageType->GetClass() : nullptr);
-    OnHealthChanged.Broadcast(MaxHealth, CurrentHealth - Old);
+    OnHealthChanged.Broadcast(MaxHealth, CurrentHealth);
 
     if (CurrentHealth <= 0.f && bCanDie)
     {

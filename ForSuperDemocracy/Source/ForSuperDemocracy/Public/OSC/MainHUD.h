@@ -29,5 +29,6 @@ protected:
 	TObjectPtr<UMainUI> MainUI;
 
 public:
+	UFUNCTION(BlueprintCallable)
 	UMainUI* GetMainUI(){ return MainUI; }
 };
