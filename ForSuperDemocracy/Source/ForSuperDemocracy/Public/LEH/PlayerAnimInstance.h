@@ -58,4 +58,5 @@ public:
 	class UAnimMontage* SaluteMontage;
 
 	void PlaySaluteAnimation();
+	void StopCurrentAnimation();
 };

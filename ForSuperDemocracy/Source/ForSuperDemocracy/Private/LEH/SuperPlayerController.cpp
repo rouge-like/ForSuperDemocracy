@@ -144,7 +144,7 @@ void ASuperPlayerController::SprintEnd(const FInputActionValue& Value)
 
 void ASuperPlayerController::AimingStart(const FInputActionValue& Value)
 {
-	if (bIsReloading || bIsAiming)
+	if (bIsReloading || bIsAiming || PlayerCharacter->bIsPlayerSalute)
 	{
 		return;
 	}
@@ -238,11 +238,11 @@ void ASuperPlayerController::Reload(const FInputActionValue& Value)
 void ASuperPlayerController::Dive(const FInputActionValue& Value)
 {
 	PlayerFSMComp->SetPlayerState(EPlayerState::Prone);
-	
-	
+	//AimingStart(0);
 }
 
 void ASuperPlayerController::Salute(const FInputActionValue& Value)
 {
+	PlayerFSMComp->SetPlayerState(EPlayerState::Salute);
 	PlayerCharacter->PlaySaluteMontage();
 }

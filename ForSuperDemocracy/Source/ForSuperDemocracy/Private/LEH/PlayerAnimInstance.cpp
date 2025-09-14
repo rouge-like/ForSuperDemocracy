@@ -84,3 +84,12 @@ void UPlayerAnimInstance::PlaySaluteAnimation()
 	StopAllMontages(0.1);
 	Montage_Play(SaluteMontage);
 }
+
+void UPlayerAnimInstance::StopCurrentAnimation()
+{
+	UAnimMontage* CurrentMontage = GetCurrentActiveMontage();
+	if (CurrentMontage)
+	{
+		Montage_Stop(0.25, CurrentMontage);
+	}
+}

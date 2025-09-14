@@ -82,4 +82,7 @@ public:
 	void PlayReloadMontage();
 	void PlayFireMontage();
 	void PlaySaluteMontage();
+	void StopSaluteMontage();
+	
+	bool bIsPlayerSalute = false;
 };

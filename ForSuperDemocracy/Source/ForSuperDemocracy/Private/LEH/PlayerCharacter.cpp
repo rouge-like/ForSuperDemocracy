@@ -73,6 +73,14 @@ void APlayerCharacter::Tick(float DeltaTime)
 			bIsZooming = false;
 		}
 	}
+
+	if (bIsPlayerSalute)
+	{
+		if (FSMComp->GetPlayerState() != EPlayerState::Salute)
+		{
+			StopSaluteMontage();
+		}
+	}
 }
 
 // Called to bind functionality to input
@@ -157,11 +165,30 @@ void APlayerCharacter::PlayFireMontage()
 
 void APlayerCharacter::PlaySaluteMontage()
 {
+	if (bIsPlayerSalute)
+	{
+		return;
+	}
+	
 	auto anim = Cast<UPlayerAnimInstance>(GetMesh()->GetAnimInstance());
 	if (anim)
 	{
+		bIsPlayerSalute = true;
+		
 		ChildActor->SetVisibility(false);
 		anim->PlaySaluteAnimation();
+	}
+}
+
+void APlayerCharacter::StopSaluteMontage()
+{
+	auto anim = Cast<UPlayerAnimInstance>(GetMesh()->GetAnimInstance());
+	if (anim)
+	{
+		bIsPlayerSalute = false;
+
+		anim->StopCurrentAnimation();
+		ChildActor->SetVisibility(true);
 	}
 }
 
