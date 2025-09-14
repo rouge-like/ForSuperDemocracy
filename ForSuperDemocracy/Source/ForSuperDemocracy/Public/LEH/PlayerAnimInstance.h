@@ -53,5 +53,9 @@ public:
 	class UAnimMontage* FireMontage;
 	
 	void PlayFireAnimation();
-	
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category=PlayerAnim)
+	class UAnimMontage* SaluteMontage;
+
+	void PlaySaluteAnimation();
 };

@@ -81,4 +81,5 @@ public:
 	// Montage
 	void PlayReloadMontage();
 	void PlayFireMontage();
+	void PlaySaluteMontage();
 };

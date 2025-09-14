@@ -70,8 +70,12 @@ void ASuperPlayerController::SetupInputComponent()
 		// Reload
 		EnhancedInput->BindAction(ReloadAction, ETriggerEvent::Started, this, &ASuperPlayerController::Reload);
 
-		// Reload
+		// Dive
 		EnhancedInput->BindAction(DiveAction, ETriggerEvent::Started, this, &ASuperPlayerController::Dive);
+
+		// Salute
+		EnhancedInput->BindAction(SaluteAction, ETriggerEvent::Started, this, &ASuperPlayerController::Salute);
+		
 	}
 }
 
@@ -236,4 +240,9 @@ void ASuperPlayerController::Dive(const FInputActionValue& Value)
 	PlayerFSMComp->SetPlayerState(EPlayerState::Prone);
 	
 	
+}
+
+void ASuperPlayerController::Salute(const FInputActionValue& Value)
+{
+	PlayerCharacter->PlaySaluteMontage();
 }

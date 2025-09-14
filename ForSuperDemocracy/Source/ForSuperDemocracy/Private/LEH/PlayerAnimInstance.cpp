@@ -22,6 +22,12 @@ UPlayerAnimInstance::UPlayerAnimInstance()
 	{
 		FireMontage = FireTemp.Object;
 	}
+
+	ConstructorHelpers::FObjectFinder<UAnimMontage> SaluteTemp(TEXT("/Script/Engine.AnimMontage'/Game/LEH/Animations/AM_Salute.AM_Salute'"));
+	if (SaluteTemp.Succeeded())
+	{
+		SaluteMontage = SaluteTemp.Object;
+	}
 }
 
 void UPlayerAnimInstance::NativeInitializeAnimation()
@@ -65,11 +71,16 @@ void UPlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 
 void UPlayerAnimInstance::PlayReloadAnimation()
 {
-	//StopAllMontages();
 	Montage_Play(ReloadMontage);
 }
 
 void UPlayerAnimInstance::PlayFireAnimation()
 {
 	Montage_Play(FireMontage);
+}
+
+void UPlayerAnimInstance::PlaySaluteAnimation()
+{
+	StopAllMontages(0.1);
+	Montage_Play(SaluteMontage);
 }

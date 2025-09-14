@@ -107,4 +107,10 @@ public:
     class UInputAction* DiveAction;
 	
 	void Dive(const FInputActionValue& Value);
+
+	// Salute
+	UPROPERTY(EditDefaultsOnly, Category = Input)
+	class UInputAction* SaluteAction;
+	
+	void Salute(const FInputActionValue& Value);
 };

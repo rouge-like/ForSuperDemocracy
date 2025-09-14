@@ -155,4 +155,14 @@ void APlayerCharacter::PlayFireMontage()
 	}
 }
 
+void APlayerCharacter::PlaySaluteMontage()
+{
+	auto anim = Cast<UPlayerAnimInstance>(GetMesh()->GetAnimInstance());
+	if (anim)
+	{
+		ChildActor->SetVisibility(false);
+		anim->PlaySaluteAnimation();
+	}
+}
+
 
