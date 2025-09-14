@@ -9,6 +9,27 @@
 #include "LEH/SuperPlayerController.h"
 
 
+UPlayerAnimInstance::UPlayerAnimInstance()
+{
+	ConstructorHelpers::FObjectFinder<UAnimMontage> ReloadTemp(TEXT("/Script/Engine.AnimMontage'/Game/LEH/Animations/AM_Reload.AM_Reload'"));
+	if (ReloadTemp.Succeeded())
+	{
+		ReloadMontage = ReloadTemp.Object;
+	}
+
+	ConstructorHelpers::FObjectFinder<UAnimMontage> FireTemp(TEXT("/Script/Engine.AnimMontage'/Game/LEH/Animations/AM_Fire.AM_Fire'"));
+	if (FireTemp.Succeeded())
+	{
+		FireMontage = FireTemp.Object;
+	}
+
+	ConstructorHelpers::FObjectFinder<UAnimMontage> SaluteTemp(TEXT("/Script/Engine.AnimMontage'/Game/LEH/Animations/AM_Salute.AM_Salute'"));
+	if (SaluteTemp.Succeeded())
+	{
+		SaluteMontage = SaluteTemp.Object;
+	}
+}
+
 void UPlayerAnimInstance::NativeInitializeAnimation()
 {
 	Super::NativeInitializeAnimation();
@@ -46,4 +67,29 @@ void UPlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		AimingLocation = PlayerCharacter->GetCameraAim();
 	}
 		
+}
+
+void UPlayerAnimInstance::PlayReloadAnimation()
+{
+	Montage_Play(ReloadMontage);
+}
+
+void UPlayerAnimInstance::PlayFireAnimation()
+{
+	Montage_Play(FireMontage);
+}
+
+void UPlayerAnimInstance::PlaySaluteAnimation()
+{
+	StopAllMontages(0.1);
+	Montage_Play(SaluteMontage);
+}
+
+void UPlayerAnimInstance::StopCurrentAnimation()
+{
+	UAnimMontage* CurrentMontage = GetCurrentActiveMontage();
+	if (CurrentMontage)
+	{
+		Montage_Stop(0.25, CurrentMontage);
+	}
 }
