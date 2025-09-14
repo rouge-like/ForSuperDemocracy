@@ -15,7 +15,8 @@ enum class ETerminidState : uint8
 	Hurt UMETA(DisplayName = "Hurt"), // 피격 상태 (데미지 후 0.5초 스턴)
 	Death UMETA(DisplayName = "Death"), // 죽음 상태 (사망 처리)
 	Swarm UMETA(DisplayName = "Swarm"), // 군집 상태 (협력 이동)
-	Flee UMETA(DisplayName = "Flee") // 도주 상태 (체력 부족시 도망)
+	Flee UMETA(DisplayName = "Flee"), // 도주 상태 (체력 부족시 도망)
+	Burrow UMETA(DisplayName = "Burrow") // 땅속 숨기 상태 (충돌 없음, 감지 대기)
 };
 
 // Terminid 타입 열거형
@@ -76,11 +77,11 @@ struct FORSUPERDEMOCRACY_API FTerminidStats
 	{
 		FTerminidStats Stats;
 		Stats.Health = 25.0f;
-		Stats.MoveSpeed = 450.0f;
+		Stats.MoveSpeed = 585.0f; // 450 * 1.3 = 30% 증가
 		Stats.AttackDamage = 15.0f;
 		Stats.AttackCooldown = 1.0f;
 		Stats.AttackRange = 100;
-		Stats.DetectionRange = 150; // 600 / 4
+		Stats.DetectionRange = 255; // 1020 / 4 - Maximum detection range for Scavenger (uint8 limit)
 		Stats.TerminidTypeID = static_cast<uint8>(ETerminidType::Scavenger);
 		return Stats;
 	}
@@ -124,7 +125,7 @@ struct FORSUPERDEMOCRACY_API FTerminidStats
 	}
 };
 
-// Terminid 스폰 데이터 구조체
+// Terminid 스폰 데이터 구조체ekl
 USTRUCT(BlueprintType)
 struct FORSUPERDEMOCRACY_API FTerminidSpawnData
 {

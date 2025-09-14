@@ -23,6 +23,8 @@ class FORSUPERDEMOCRACY_API UHealthWidget : public UUserWidget
 	TObjectPtr<UTextBlock> HealCount;
 
 public:
+	UFUNCTION(BlueprintCallable)
 	void SetHealthBar(float Ratio);
+	UFUNCTION(BlueprintCallable)
 	void SetHealCount(int32 CurrentCnt, int32 MaxCnt = 4);
 };

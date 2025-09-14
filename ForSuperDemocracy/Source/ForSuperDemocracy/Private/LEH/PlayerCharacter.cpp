@@ -125,7 +125,6 @@ FRotator APlayerCharacter::GetCameraAim()
 {
 	FVector Location;
 	FRotator Rotation;
-	
 	if (GetController())
 	{
 		GetController()->GetPlayerViewPoint(Location, Rotation);
