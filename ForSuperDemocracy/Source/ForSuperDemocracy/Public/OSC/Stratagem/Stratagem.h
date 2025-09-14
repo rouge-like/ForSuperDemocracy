@@ -30,6 +30,12 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category="Stratagem")
 	float DelayTime = 2.0f;
 
+	UPROPERTY(EditDefaultsOnly, Category="Stratagem")
+	float Damage = 100.f;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Stratagem")
+	float Radius = 500.f;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Stratagem|Animation")
 	TObjectPtr<UAnimSequenceBase> FixingAnim;
 	
@@ -38,6 +44,24 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category="Stratagem|VFX")
 	TObjectPtr<UNiagaraSystem> LightVFX;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Stratagem|VFX")
+	TObjectPtr<UNiagaraSystem> ExplosionVFX;
+	// 고정 상태 여부 (중복 처리 방지)
+	bool bHasLandedAndFixingStarted = false;
+
+	// Fixing 애니메이션 종료 후 호출되는 핸들러
+	void OnFixingFinished();
+
+	// ProjectileMovement 정지(충돌) 시 콜백
+	UFUNCTION()
+	void OnProjectileStopped(const FHitResult& ImpactResult);
+
+	// Fixing 시퀀스 시작
+	void StartFixingSequence(const FHitResult& ImpactResult);
+
+	UFUNCTION()
+	void AirRaid();
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
