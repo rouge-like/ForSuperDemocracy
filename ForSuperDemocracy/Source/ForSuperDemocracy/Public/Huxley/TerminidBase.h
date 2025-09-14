@@ -78,8 +78,14 @@ public:
     UPROPERTY(BlueprintReadOnly, Category = "Animation")
     bool bIsPlayingAnimation;
 
+    UPROPERTY(BlueprintReadOnly, Category = "Animation")
+    bool bIsPlayingAttackAnimation;
+
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation")
     float SpawnAnimationDuration;
+    
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation")
+    float AttackAnimationDuration;
 
     // Burrow 관련 속성
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Burrow")
@@ -154,6 +160,16 @@ public:
 
     UFUNCTION(BlueprintPure, Category = "Spawning")
     bool IsSpawning() const { return bIsSpawning; }
+    
+    // 공격 애니메이션 관리
+    UFUNCTION(BlueprintCallable, Category = "Animation")
+    void StartAttackAnimation();
+    
+    UFUNCTION(BlueprintCallable, Category = "Animation")
+    void CompleteAttackAnimation();
+    
+    UFUNCTION(BlueprintPure, Category = "Animation")
+    bool IsPlayingAttackAnimation() const { return bIsPlayingAttackAnimation; }
     
     virtual void ProcessIdleBehavior(float DeltaTime);
     virtual void ProcessPatrolBehavior(float DeltaTime);
@@ -259,6 +275,16 @@ public:
     UFUNCTION(BlueprintPure, Category = "AI")
     bool IsPlayerInDetectionRange(APawn* Player) const;
 
+    // 소음 기반 감지 시스템
+    UFUNCTION(BlueprintCallable, Category = "AI")
+    void OnNoiseHeard(FVector NoiseLocation, float NoiseRadius, AActor* NoiseInstigator);
+    
+    UFUNCTION(BlueprintCallable, Category = "AI")
+    void RegisterForNoiseEvents();
+    
+    UFUNCTION(BlueprintPure, Category = "AI")
+    bool IsNoiseInRange(FVector NoiseLocation, float NoiseRadius) const;
+
     // 유틸리티 함수들 - HealthComponent 기반
     UFUNCTION(BlueprintPure, Category = "Stats")
     float GetCurrentHealth() const;
@@ -281,6 +307,19 @@ public:
     UFUNCTION(BlueprintPure, Category = "AI")
     FORCEINLINE AActor* GetCurrentTarget() const { return CurrentTarget; }
 
+    // 소음 감지 관련 변수들 (Blueprint에서 접근 가능)
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI")
+    float NoiseDetectionRange;
+    
+    UPROPERTY(BlueprintReadOnly, Category = "AI")
+    FVector LastHeardNoiseLocation;
+    
+    UPROPERTY(BlueprintReadOnly, Category = "AI")
+    float LastNoiseTime;
+    
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI")
+    float NoiseResponseDuration; // 소음 후 각성 상태 지속 시간
+
 private:
     void UpdateMovement(float DeltaTime);
     void HandleDeath();
@@ -297,6 +336,9 @@ private:
     
     // Burrow 이머지 타이머 핸들
     FTimerHandle BurrowEmergeTimerHandle;
+    
+    // 공격 애니메이션 타이머 핸들
+    FTimerHandle AttackAnimationTimerHandle;
 
 #if WITH_EDITOR
 public:

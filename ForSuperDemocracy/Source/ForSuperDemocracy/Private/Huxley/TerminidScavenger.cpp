@@ -25,17 +25,19 @@ ATerminidScavenger::ATerminidScavenger()
     bIsFleeingActive = false;
     FleeStartTime = 0.0f;
     LastHelpCallTime = 0.0f;
+    
+    // 스캐빈저는 더 빠른 회복 (더 민첩한 유닛)
+    HurtRecoveryTime = 0.5f; // 기본 1.5초 -> 0.5초로 단축
 }
 
 void ATerminidScavenger::BeginPlay()
 {
-    Super::BeginPlay();
-    
-    // 스캐빈저 전용 스탯으로 초기화
+    // 먼저 스캐빈저 스탯으로 초기화
     FTerminidStats ScavengerStats = FTerminidStats::CreateScavengerStats();
     InitializeTerminid(ScavengerStats, ETerminidType::Scavenger);
     
-    // 체력 초기화는 InitializeTerminid에서 처리됨
+    // 그 다음 부모 BeginPlay 호출 (여기서 burrow 체크가 올바르게 동작)
+    Super::BeginPlay();
 }
 
 // 상태 확인 함수들

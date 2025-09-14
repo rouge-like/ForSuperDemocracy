@@ -1,14 +1,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Animation/AnimInstance.h"
+#include "Huxley/TerminidAnimInstance.h"
 #include "TerminidTypes.h"
 #include "ScavengerAnimInstance.generated.h"
 
-class ATerminidBase;
+class ATerminidScavenger;
 
-UCLASS()
-class FORSUPERDEMOCRACY_API UScavengerAnimInstance : public UAnimInstance
+UCLASS(BlueprintType, Blueprintable)
+class FORSUPERDEMOCRACY_API UScavengerAnimInstance : public UTerminidAnimInstance
 {
 	GENERATED_BODY()
 
@@ -16,91 +16,46 @@ public:
 	UScavengerAnimInstance();
 
 protected:
-	// 애니메이션 초기화
 	virtual void NativeInitializeAnimation() override;
-	
-	// 매 프레임 애니메이션 업데이트
-	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
+
+	// 부모 클래스의 가상 함수들 오버라이드
+	virtual void UpdateMovementVariables() override;
+	virtual void UpdateCombatVariables() override;
+	virtual void UpdateStateVariables() override;
+
+	// Scavenger 전용 애니메이션 상태 확인 함수들 (부모 함수 오버라이드)
+	virtual float GetMovementPlayRate() const override;
 
 protected:
-	// 캐시된 참조
-	UPROPERTY(BlueprintReadOnly, Category = "References")
-	ATerminidBase* TerminidOwner;
+	// Scavenger 캐시된 참조 (부모의 TerminidOwner를 캐스팅한 것)
+	UPROPERTY(BlueprintReadOnly, Category = "References|Scavenger")
+	ATerminidScavenger* ScavengerOwner;
 
-	// 기본 이동 정보
-	UPROPERTY(BlueprintReadOnly, Category = "Movement")
-	float Speed;
+	// Scavenger 전용 변수들
+	UPROPERTY(BlueprintReadOnly, Category = "Animation|Scavenger", meta = (AllowPrivateAccess = "true"))
+	float AttackChargePercent;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Movement")
-	float Direction;
+	UPROPERTY(BlueprintReadOnly, Category = "Animation|Scavenger", meta = (AllowPrivateAccess = "true"))
+	bool bIsAttackCharging;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Movement")
-	bool bIsMoving;
-
-	UPROPERTY(BlueprintReadOnly, Category = "Movement")
-	bool bIsInAir;
-
-	// 상태 정보
-	UPROPERTY(BlueprintReadOnly, Category = "State")
-	ETerminidState CurrentState;
-
-	UPROPERTY(BlueprintReadOnly, Category = "State")
-	bool bIsAlive;
-
-	UPROPERTY(BlueprintReadOnly, Category = "State")
-	bool bIsBurrowed;
-
-	UPROPERTY(BlueprintReadOnly, Category = "State")
-	bool bIsSpawning;
-
-	// 전투 관련
-	UPROPERTY(BlueprintReadOnly, Category = "Combat")
-	bool bHasTarget;
-
-	UPROPERTY(BlueprintReadOnly, Category = "Combat")
-	float DistanceToTarget;
-
-	UPROPERTY(BlueprintReadOnly, Category = "Combat")
-	bool bIsAttacking;
-
-	UPROPERTY(BlueprintReadOnly, Category = "Combat")
-	bool bIsHurt;
-
-	// 체력 정보
-	UPROPERTY(BlueprintReadOnly, Category = "Health")
-	float HealthPercent;
-
-	UPROPERTY(BlueprintReadOnly, Category = "Health")
-	bool bShouldFlee;
-
-private:
-	// 내부 계산용
-	FVector LastFrameVelocity;
-	float MovementThreshold;
+	UPROPERTY(BlueprintReadOnly, Category = "Animation|Scavenger", meta = (AllowPrivateAccess = "true"))
+	float TimeSinceLastAttack;
 
 public:
-	// 블루프린트에서 호출 가능한 유틸리티 함수들
-	UFUNCTION(BlueprintPure, Category = "Animation")
-	bool ShouldPlayIdleAnimation() const;
+	// Scavenger 전용 유틸리티 함수들
+	UFUNCTION(BlueprintPure, Category = "Animation|Scavenger")
+	bool IsChargingAttack() const { return bIsAttackCharging; }
 
-	UFUNCTION(BlueprintPure, Category = "Animation")
-	bool ShouldPlayMoveAnimation() const;
+	UFUNCTION(BlueprintPure, Category = "Animation|Scavenger")
+	float GetAttackChargePercent() const { return AttackChargePercent; }
 
-	UFUNCTION(BlueprintPure, Category = "Animation")
-	bool ShouldPlayAttackAnimation() const;
+	UFUNCTION(BlueprintPure, Category = "Animation|Scavenger")
+	bool ShouldPlayScavengerIdleVariation() const;
 
-	UFUNCTION(BlueprintPure, Category = "Animation")
-	bool ShouldPlayHurtAnimation() const;
+	UFUNCTION(BlueprintPure, Category = "Animation|Scavenger")
+	bool ShouldPlayScavengerAttackCombo() const;
 
-	UFUNCTION(BlueprintPure, Category = "Animation")
-	bool ShouldPlayDeathAnimation() const;
-
-	UFUNCTION(BlueprintPure, Category = "Animation")
-	bool ShouldPlayBurrowAnimation() const;
-
-	UFUNCTION(BlueprintPure, Category = "Animation")
-	bool ShouldPlayEmergeAnimation() const;
-
-	UFUNCTION(BlueprintPure, Category = "Animation")
-	float GetMovementPlayRate() const;
+private:
+	// Scavenger 전용 내부 계산용 변수들
+	float LastAttackTime;
 };

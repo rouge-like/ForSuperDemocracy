@@ -72,7 +72,15 @@ ATerminidBase::ATerminidBase()
     // 애니메이션 관련 초기화
     bIsSpawning = false;
     bIsPlayingAnimation = false;
+    bIsPlayingAttackAnimation = false;
     SpawnAnimationDuration = 2.0f;
+    AttackAnimationDuration = 1.0f; // 공격 애니메이션 기본 1초
+    
+    // 소음 감지 관련 초기화
+    NoiseDetectionRange = 1000.0f; // 기본 1000 유닛
+    LastHeardNoiseLocation = FVector::ZeroVector;
+    LastNoiseTime = 0.0f;
+    NoiseResponseDuration = 10.0f; // 10초간 각성 상태
 }
 
 void ATerminidBase::BeginPlay()
@@ -95,6 +103,9 @@ void ATerminidBase::BeginPlay()
     
     // 플레이어 감지 초기화
     LastPlayerDetectionTime = 0.0f;
+    
+    // 소음 감지 시스템 등록
+    RegisterForNoiseEvents();
     
     // Burrow 상태 초기화
     if (bStartInBurrow && TerminidType == ETerminidType::Scavenger)
@@ -189,19 +200,61 @@ void ATerminidBase::ProcessPatrolBehavior(float DeltaTime)
 
 void ATerminidBase::ProcessChaseBehavior(float DeltaTime)
 {
-    // 기본 추적 행동 - 타겟을 향해 이동
+    // 기본 추적 행동 - 타겟을 향해 이동하다가 공격 범위에 들어오면 공격
     if (HasValidTarget())
     {
+        // 공격 범위에 도달하면 Attack 상태로 전환
+        if (IsTargetInAttackRange() && CanPerformAttack())
+        {
+            if (StateMachine)
+            {
+                StateMachine->ChangeState(ETerminidState::Attack);
+            }
+            return;
+        }
+        
+        // 아직 공격 범위가 아니면 계속 이동
         MoveTowardsTarget(DeltaTime);
     }
 }
 
 void ATerminidBase::ProcessAttackBehavior(float DeltaTime)
 {
-    // 기본 공격 행동
-    if (CanPerformAttack())
+    // 공격 애니메이션 재생 중이면 상태 변경 금지 및 이동 중단
+    if (bIsPlayingAttackAnimation)
     {
-        PerformAttack();
+        // 공격 중에는 움직임 중단 (자연스러운 공격을 위해)
+        StopMovement();
+        // 공격 애니메이션이 완료될 때까지 대기
+        return;
+    }
+    
+    // 기본 공격 행동
+    if (HasValidTarget())
+    {
+        // 타겟이 공격 범위를 벗어났으면 다시 추적 (애니메이션 끝난 후에만)
+        if (!IsTargetInAttackRange())
+        {
+            if (StateMachine)
+            {
+                StateMachine->ChangeState(ETerminidState::Chase);
+            }
+            return;
+        }
+        
+        // 공격 범위 내에 있으면 공격 수행
+        if (CanPerformAttack())
+        {
+            PerformAttack();
+        }
+    }
+    else
+    {
+        // 타겟이 없으면 Idle로 전환
+        if (StateMachine)
+        {
+            StateMachine->ChangeState(ETerminidState::Idle);
+        }
     }
 }
 
@@ -311,6 +364,9 @@ void ATerminidBase::PerformAttack()
     
     LastAttackTime = GetWorld()->GetTimeSeconds();
     
+    // 공격 애니메이션 시작
+    StartAttackAnimation();
+    
     // 블루프린트 이벤트 호출 (애니메이션 처리용)
     ExecuteAttackBehavior();
     
@@ -322,6 +378,12 @@ void ATerminidBase::OnDamaged(float Damage, AActor* DamageCauser, AController* E
 {
     // 피격 시간 기록
     LastHurtTime = GetWorld()->GetTimeSeconds();
+    
+    // 공격 애니메이션 중단 (피격 시에는 애니메이션 중단 허용)
+    if (bIsPlayingAttackAnimation)
+    {
+        CompleteAttackAnimation();
+    }
     
     // 기존 타이머 취소
     GetWorld()->GetTimerManager().ClearTimer(HurtRecoveryTimerHandle);
@@ -412,6 +474,9 @@ void ATerminidBase::RecoverFromHurt()
     {
         return;
     }
+    
+    // 먼저 상태 변경 락을 해제
+    StateMachine->SetStateChangeLock(false);
     
     // 타겟이 있으면 Chase 상태로, 없으면 Idle 상태로 복원
     if (HasValidTarget())
@@ -542,6 +607,12 @@ void ATerminidBase::MoveTowardsTarget(float DeltaTime)
 
 void ATerminidBase::MoveTowardsLocation(const FVector& TargetLocation, float DeltaTime)
 {
+    // 공격 애니메이션 재생 중에는 이동하지 않음
+    if (bIsPlayingAttackAnimation)
+    {
+        return;
+    }
+    
     UCharacterMovementComponent* CharMovement = GetCharacterMovement();
     if (!CharMovement)
     {
@@ -596,13 +667,28 @@ void ATerminidBase::UpdatePlayerDetection(float DeltaTime)
     
     if (NearestPlayer)
     {
-        // 감지 범위 및 시야각 체크
-        if (IsPlayerInDetectionRange(NearestPlayer) && IsPlayerInSight(NearestPlayer))
+        bool bCanSeePlayer = IsPlayerInDetectionRange(NearestPlayer) && IsPlayerInSight(NearestPlayer);
+        bool bRecentNoiseAlert = false;
+        
+        // 최근 소음이 있었는지 확인 (각성 상태)
+        if (LastNoiseTime > 0.0f && (CurrentTime - LastNoiseTime) < NoiseResponseDuration)
+        {
+            bRecentNoiseAlert = true;
+        }
+        
+        // 직접 감지하거나 소음으로 인한 각성 상태에서 플레이어 발견
+        if (bCanSeePlayer || (bRecentNoiseAlert && IsPlayerInDetectionRange(NearestPlayer)))
         {
             // 타겟이 없으면 새로운 타겟으로 설정
             if (!CurrentTarget)
             {
                 SetCurrentTarget(NearestPlayer);
+                
+                // 버로우 상태라면 즉시 등장
+                if (bIsBurrowed)
+                {
+                    EmergeFromBurrow();
+                }
                 
                 // FSM 상태를 Chase로 변경
                 if (StateMachine)
@@ -674,6 +760,98 @@ bool ATerminidBase::IsPlayerInDetectionRange(APawn* Player) const
     
     float Distance = FVector::Dist(GetActorLocation(), Player->GetActorLocation());
     return Distance <= BaseStats.GetActualDetectionRange();
+}
+
+// 소음 감지 시스템
+void ATerminidBase::OnNoiseHeard(FVector NoiseLocation, float NoiseRadius, AActor* NoiseInstigator)
+{
+    // 죽었거나 버로우 상태면 반응하지 않음
+    if (!IsAlive() || bIsBurrowed)
+    {
+        return;
+    }
+    
+    // 소음 범위 내에 있는지 확인
+    if (!IsNoiseInRange(NoiseLocation, NoiseRadius))
+    {
+        return;
+    }
+    
+    float CurrentTime = GetWorld()->GetTimeSeconds();
+    
+    // 소음 정보 저장
+    LastHeardNoiseLocation = NoiseLocation;
+    LastNoiseTime = CurrentTime;
+    
+    // 소음 발생 지점이 플레이어 근처라면 타겟으로 설정
+    if (APawn* NearestPlayer = FindNearestPlayer())
+    {
+        float DistanceToPlayer = FVector::Dist(NoiseLocation, NearestPlayer->GetActorLocation());
+        
+        // 플레이어가 소음 근처에 있으면 타겟으로 설정
+        if (DistanceToPlayer < 500.0f) // 500 유닛 내
+        {
+            SetCurrentTarget(NearestPlayer);
+            
+            // 버로우 상태라면 즉시 등장
+            if (bIsBurrowed)
+            {
+                EmergeFromBurrow();
+            }
+            
+            // FSM 상태를 Chase로 변경
+            if (StateMachine)
+            {
+                StateMachine->ChangeState(ETerminidState::Chase);
+            }
+        }
+    }
+}
+
+void ATerminidBase::RegisterForNoiseEvents()
+{
+    // Blueprint에서 구현할 수 있도록 Blueprint Implementable Event로 남겨둠
+    // 또는 간단한 C++ 구현:
+    // 실제 게임에서는 노이즈 시스템과 연결하여 구현
+}
+
+bool ATerminidBase::IsNoiseInRange(FVector NoiseLocation, float NoiseRadius) const
+{
+    float DistanceToNoise = FVector::Dist(GetActorLocation(), NoiseLocation);
+    
+    // 소음의 반경과 자신의 감지 범위를 모두 고려
+    float EffectiveRange = FMath::Max(NoiseRadius, NoiseDetectionRange);
+    
+    return DistanceToNoise <= EffectiveRange;
+}
+
+// 공격 애니메이션 관리 함수들
+void ATerminidBase::StartAttackAnimation()
+{
+    bIsPlayingAttackAnimation = true;
+    
+    // 애니메이션 지속 시간 후 자동 완료 처리
+    if (UWorld* World = GetWorld())
+    {
+        World->GetTimerManager().SetTimer(
+            AttackAnimationTimerHandle,
+            this,
+            &ATerminidBase::CompleteAttackAnimation,
+            AttackAnimationDuration,
+            false
+        );
+    }
+}
+
+void ATerminidBase::CompleteAttackAnimation()
+{
+    bIsPlayingAttackAnimation = false;
+    
+    // 타이머 정리
+    if (UWorld* World = GetWorld())
+    {
+        World->GetTimerManager().ClearTimer(AttackAnimationTimerHandle);
+    }
 }
 
 // Private 함수들

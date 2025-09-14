@@ -77,11 +77,11 @@ struct FORSUPERDEMOCRACY_API FTerminidStats
 	{
 		FTerminidStats Stats;
 		Stats.Health = 25.0f;
-		Stats.MoveSpeed = 450.0f;
+		Stats.MoveSpeed = 585.0f; // 450 * 1.3 = 30% 증가
 		Stats.AttackDamage = 15.0f;
 		Stats.AttackCooldown = 1.0f;
 		Stats.AttackRange = 100;
-		Stats.DetectionRange = 150; // 600 / 4
+		Stats.DetectionRange = 255; // 1020 / 4 - Maximum detection range for Scavenger (uint8 limit)
 		Stats.TerminidTypeID = static_cast<uint8>(ETerminidType::Scavenger);
 		return Stats;
 	}
@@ -125,7 +125,7 @@ struct FORSUPERDEMOCRACY_API FTerminidStats
 	}
 };
 
-// Terminid 스폰 데이터 구조체
+// Terminid 스폰 데이터 구조체ekl
 USTRUCT(BlueprintType)
 struct FORSUPERDEMOCRACY_API FTerminidSpawnData
 {
