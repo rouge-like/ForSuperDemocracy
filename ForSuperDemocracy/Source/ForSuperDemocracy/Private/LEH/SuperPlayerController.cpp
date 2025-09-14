@@ -60,15 +60,22 @@ void ASuperPlayerController::SetupInputComponent()
 		EnhancedInput->BindAction(SprintAction, ETriggerEvent::Completed, this, &ASuperPlayerController::SprintEnd);
 
 		// Aiming
-		EnhancedInput->BindAction(AimingAction, ETriggerEvent::Started, this, &ASuperPlayerController::Aiming);
-		EnhancedInput->BindAction(AimingAction, ETriggerEvent::Completed, this, &ASuperPlayerController::Aiming);
-
+		EnhancedInput->BindAction(AimingAction, ETriggerEvent::Started, this, &ASuperPlayerController::AimingStart);
+		EnhancedInput->BindAction(AimingAction, ETriggerEvent::Completed, this, &ASuperPlayerController::AimingEnd);
+		
 		// Fire
 		EnhancedInput->BindAction(FireAction, ETriggerEvent::Started, this, &ASuperPlayerController::FireStart);
 		EnhancedInput->BindAction(FireAction, ETriggerEvent::Completed, this, &ASuperPlayerController::FireEnd);
 
 		// Reload
-		EnhancedInput->BindAction(ReloadAction, ETriggerEvent::Triggered, this, &ASuperPlayerController::Reload);
+		EnhancedInput->BindAction(ReloadAction, ETriggerEvent::Started, this, &ASuperPlayerController::Reload);
+
+		// Dive
+		EnhancedInput->BindAction(DiveAction, ETriggerEvent::Started, this, &ASuperPlayerController::Dive);
+
+		// Salute
+		EnhancedInput->BindAction(SaluteAction, ETriggerEvent::Started, this, &ASuperPlayerController::Salute);
+		
 	}
 }
 
@@ -117,11 +124,12 @@ void ASuperPlayerController::Look(const FInputActionValue& Value)
 
 void ASuperPlayerController::SprintStart(const FInputActionValue& Value)
 {
-	if (bIsAiming)
+	if (bIsAiming || bIsReloading)
 	{
 		return;
 	}
-	PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed += SpeedIncreaseValue;
+	
+	PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed = SprintSpeed;
 }
 
 void ASuperPlayerController::SprintEnd(const FInputActionValue& Value)
@@ -131,46 +139,54 @@ void ASuperPlayerController::SprintEnd(const FInputActionValue& Value)
 		return;
 	}
 	
-	PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed -= SpeedIncreaseValue;
+	PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 }
 
-void ASuperPlayerController::Aiming(const FInputActionValue& Value)
+void ASuperPlayerController::AimingStart(const FInputActionValue& Value)
 {
-	if (!bIsAiming)
+	if (bIsReloading || bIsAiming || PlayerCharacter->bIsPlayerSalute)
 	{
-		bIsAiming = true;
-		PlayerCharacter->bIsPlayerAiming = true;
-		PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed -= SpeedDecreaseValue;
-		
-		WeaponComp->StartAiming();
-		
-		// Actor rotation
-		PlayerCharacter->GetCharacterMovement()->bOrientRotationToMovement = false;
-		PlayerCharacter->GetCharacterMovement()->bUseControllerDesiredRotation = true;
-		PlayerCharacter->GetCharacterMovement()->RotationRate = FRotator(0.f, 500.f, 0.f);
-		PlayerCharacter->bUseControllerRotationYaw = false;
-
-		// Set FOV
-		PlayerCharacter->StartZoom(true);
+		return;
 	}
-	else
-	{
-		bIsAiming = false;
-		PlayerCharacter->bIsPlayerAiming = false;
-		PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed += SpeedDecreaseValue;
+	
+	bIsAiming = true;
+	PlayerCharacter->bIsPlayerAiming = true;
+	PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed = AimingSpeed;
 		
-		WeaponComp->StopAiming();
+	WeaponComp->StartAiming();
+		
+	// Actor rotation
+	PlayerCharacter->GetCharacterMovement()->bOrientRotationToMovement = false;
+	PlayerCharacter->GetCharacterMovement()->bUseControllerDesiredRotation = true;
+	PlayerCharacter->GetCharacterMovement()->RotationRate = FRotator(0.f, 500.f, 0.f);
+	PlayerCharacter->bUseControllerRotationYaw = false;
 
-		// Actor rotation
-		PlayerCharacter->GetCharacterMovement()->bUseControllerDesiredRotation = false;
-		PlayerCharacter->GetCharacterMovement()->bOrientRotationToMovement = true;
+	// Set FOV
+	PlayerCharacter->StartZoom(true);
+}
 
-		// Set FOV
-		PlayerCharacter->StartZoom(false);
+void ASuperPlayerController::AimingEnd(const FInputActionValue& Value)
+{
+	//if (bIsReloading || !bIsAiming)
+	//{
+	//	return;
+	//}
 
-		// UI
-		CrossHairWidget->RemoveFromParent();
-	}
+	bIsAiming = false;
+	PlayerCharacter->bIsPlayerAiming = false;
+	PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+		
+	WeaponComp->StopAiming();
+
+	// Actor rotation
+	PlayerCharacter->GetCharacterMovement()->bUseControllerDesiredRotation = false;
+	PlayerCharacter->GetCharacterMovement()->bOrientRotationToMovement = true;
+
+	// Set FOV
+	PlayerCharacter->StartZoom(false);
+
+	// UI
+	CrossHairWidget->RemoveFromParent();
 }
 
 void ASuperPlayerController::CrossHairWidgetOn()
@@ -184,7 +200,7 @@ void ASuperPlayerController::FireStart(const FInputActionValue& Value)
 	{
 		if (IsValid(WeaponComp))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Fire start"));
+			PlayerCharacter->PlayFireMontage();
 			WeaponComp->StartFire();
 		}
 	}
@@ -200,8 +216,33 @@ void ASuperPlayerController::FireEnd(const FInputActionValue& Value)
 
 void ASuperPlayerController::Reload(const FInputActionValue& Value)
 {
+	if (!bIsReloading)
+	{
+		bIsReloading = true;
+		PlayerCharacter->PlayReloadMontage();
+
+		FTimerHandle TimerHandle;
+		GetWorldTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda([&]
+		{
+			bIsReloading = false;
+			
+		}), ReloadingTime, false);
+	}
+	
 	if (IsValid(WeaponComp))
 	{
 		WeaponComp->Reload();
 	}
+}
+
+void ASuperPlayerController::Dive(const FInputActionValue& Value)
+{
+	PlayerFSMComp->SetPlayerState(EPlayerState::Prone);
+	//AimingStart(0);
+}
+
+void ASuperPlayerController::Salute(const FInputActionValue& Value)
+{
+	PlayerFSMComp->SetPlayerState(EPlayerState::Salute);
+	PlayerCharacter->PlaySaluteMontage();
 }

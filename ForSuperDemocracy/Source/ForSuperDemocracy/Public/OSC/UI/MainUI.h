@@ -7,6 +7,7 @@
 #include "MainUI.generated.h"
 
 class UWeaponWidget;
+class UHealthWidget;
 /**
  * 
  */
@@ -19,6 +20,13 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UWeaponWidget> WeaponWidget;
 
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UHealthWidget> HealthWidget;
+
+
 public:
+	UFUNCTION(BlueprintCallable)
 	UWeaponWidget* GetWeaponWidget(){ return WeaponWidget; }
+	UFUNCTION(BlueprintCallable)
+	UHealthWidget* GetHealthWidget(){ return HealthWidget; }
 };

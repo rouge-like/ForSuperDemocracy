@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "ProjectileBase.h"
 #include "GameFramework/Actor.h"
 #include "Grenade.generated.h"
 
@@ -11,24 +12,16 @@ class UProjectileMovementComponent;
 class UNiagaraSystem;
 
 UCLASS()
-class FORSUPERDEMOCRACY_API AGrenade : public AActor
+class FORSUPERDEMOCRACY_API AGrenade : public AProjectileBase
 {
 	GENERATED_BODY()
 	
 public:	
-	// Sets default values for this actor's properties
-	AGrenade();
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-
-    UPROPERTY(EditAnywhere)
-    TObjectPtr<USphereComponent> SphereComp;
-    UPROPERTY(EditAnywhere)
-    TObjectPtr<USkeletalMeshComponent> MeshComp;
-    UPROPERTY(EditAnywhere)
-    TObjectPtr<UProjectileMovementComponent> ProjectileMovement;
+	
 
     // 퓨즈 시간(초) 후 폭발 FX 스폰 및 자멸
     UPROPERTY(EditDefaultsOnly, Category="Grenade")

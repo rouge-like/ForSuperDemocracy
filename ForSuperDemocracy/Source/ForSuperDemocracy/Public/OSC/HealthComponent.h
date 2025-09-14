@@ -10,14 +10,17 @@ class AController;
 class UDamageType;
 struct FHitResult;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnHealthChanged, float, NewHealth, float, Delta);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnHealthChanged, float, MaxHealth, float, CurrentHealth);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FOnDamaged, float, Damage, AActor*, DamageCauser, AController*, InstigatedBy, TSubclassOf<UDamageType>, DamageType);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDeath, AActor*, Victim);
+// Ragdoll state events
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRagdollStart, AActor*, OwnerActor);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRagdollEnd, AActor*, OwnerActor);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class FORSUPERDEMOCRACY_API UHealthComponent : public UActorComponent
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 
 public:	
     // 컴포넌트 기본값 설정(체력/사망 가능 여부 등)
@@ -56,6 +59,13 @@ public:
     UPROPERTY(BlueprintAssignable, Category="Health|Event")
     FOnDeath OnDeath;
 
+    // Ragdoll events for external listeners (e.g., Player camera)
+    UPROPERTY(BlueprintAssignable, Category="Health|Ragdoll|Event")
+    FOnRagdollStart OnRagdollStart;
+
+    UPROPERTY(BlueprintAssignable, Category="Health|Ragdoll|Event")
+    FOnRagdollEnd OnRagdollEnd;
+
 protected:
     // 데미지 이벤트 바인딩 핸들러(엔진 콜백)
     UFUNCTION()
@@ -77,4 +87,48 @@ protected:
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Health")
     bool bCanDie = true;
+
+    // Ragdoll impulse tuning: impulse strength per 1 damage
+    UPROPERTY(EditDefaultsOnly, Category="Health|Ragdoll", meta=(ClampMin="0"))
+    float ImpulsePerDamage = 50.f;
+
+    // Time before exiting simple ragdoll
+    UPROPERTY(EditDefaultsOnly, Category="Health|Ragdoll", meta=(ClampMin="0"))
+    float RagdollRecoverTime = 1.5f;
+
+    // lightweight state for simple ragdoll flow
+    UPROPERTY(Transient)
+    bool bIsRagdolling = false;
+
+    UPROPERTY(Transient)
+    FName PrevMeshCollisionProfileName;
+    
+    // Store gravity scale to restore after ragdoll
+    UPROPERTY(Transient)
+    float PrevGravityScale = 1.0f;
+
+    UFUNCTION()
+    void RecoverFromRagdoll();
+
+    // Capsule ↔ Mesh sync while ragdolled (for camera/actor cohesion)
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Health|Ragdoll")
+    bool bSyncCapsuleToRagdoll = true;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Health|Ragdoll")
+    FName RagdollPelvisBoneName = TEXT("pelvis");
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Health|Ragdoll", meta=(ClampMin="0"))
+    float RagdollCapsuleFollowZOffset = 0.f;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Health|Ragdoll")
+    bool bSyncCapsuleYawToPelvis = false;
+
+    void UpdateCapsuleFollowRagdoll(float DeltaTime);
+
+    // Detach/reattach strategy to avoid parent transform jitter
+    UPROPERTY(Transient)
+    bool bDetachedMeshDuringRagdoll = false;
+
+    UPROPERTY(Transient)
+    FTransform SavedMeshRelativeTransform;
 };

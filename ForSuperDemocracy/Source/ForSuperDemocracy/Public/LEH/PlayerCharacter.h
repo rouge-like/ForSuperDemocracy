@@ -72,8 +72,17 @@ public:
 	void StartZoom(bool IsAiming);
 
 public:
-	// Aiming control rig
+	// Aiming rotation
 	bool bIsPlayerAiming = false;
 
 	FRotator GetCameraAim();
+
+public:
+	// Montage
+	void PlayReloadMontage();
+	void PlayFireMontage();
+	void PlaySaluteMontage();
+	void StopSaluteMontage();
+	
+	bool bIsPlayerSalute = false;
 };

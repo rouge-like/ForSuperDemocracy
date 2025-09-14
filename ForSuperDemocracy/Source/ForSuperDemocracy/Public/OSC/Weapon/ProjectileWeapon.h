@@ -9,6 +9,7 @@
 /**
  * 
  */
+class AProjectileBase;
 UCLASS()
 class FORSUPERDEMOCRACY_API AProjectileWeapon : public AWeaponBase
 {
@@ -18,7 +19,7 @@ protected:
 	virtual void FireOnce() override;
 
 	UPROPERTY(EditDefaultsOnly, Category="Projectile");
-	TSubclassOf<class AGrenade> ProjectileClass;
+	TSubclassOf<AProjectileBase> ProjectileClass;
 
 	UPROPERTY(EditDefaultsOnly, Category="Projectile");
 	float InitialSpeed = 1600.f;
