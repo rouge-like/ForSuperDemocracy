@@ -71,6 +71,16 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat")
     float HurtRecoveryTime;
 
+    // 체력 회복 관련 속성
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat")
+    float HealthRegenerationRate; // 초당 회복량
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat")
+    float HealthRegenerationDelay; // 피격 후 회복 시작까지의 지연 시간
+
+    UPROPERTY(BlueprintReadOnly, Category = "Combat")
+    float LastDamageTime; // 마지막 피격 시간
+
     // 애니메이션 관련 속성
     UPROPERTY(BlueprintReadOnly, Category = "Animation")
     bool bIsSpawning;
@@ -307,16 +317,26 @@ public:
     UFUNCTION(BlueprintPure, Category = "AI")
     FORCEINLINE AActor* GetCurrentTarget() const { return CurrentTarget; }
 
+    // 체력 회복 함수들
+    UFUNCTION(BlueprintCallable, Category = "Combat")
+    void StartHealthRegeneration();
+
+    UFUNCTION(BlueprintCallable, Category = "Combat")
+    void StopHealthRegeneration();
+
+    UFUNCTION(BlueprintCallable, Category = "Combat")
+    void ProcessHealthRegeneration(float DeltaTime);
+
     // 소음 감지 관련 변수들 (Blueprint에서 접근 가능)
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI")
     float NoiseDetectionRange;
-    
+
     UPROPERTY(BlueprintReadOnly, Category = "AI")
     FVector LastHeardNoiseLocation;
-    
+
     UPROPERTY(BlueprintReadOnly, Category = "AI")
     float LastNoiseTime;
-    
+
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI")
     float NoiseResponseDuration; // 소음 후 각성 상태 지속 시간
 
@@ -336,9 +356,13 @@ private:
     
     // Burrow 이머지 타이머 핸들
     FTimerHandle BurrowEmergeTimerHandle;
-    
+
     // 공격 애니메이션 타이머 핸들
     FTimerHandle AttackAnimationTimerHandle;
+
+    // 체력 회복 관련
+    bool bIsRegeneratingHealth;
+    FTimerHandle HealthRegenerationTimerHandle;
 
 #if WITH_EDITOR
 public:

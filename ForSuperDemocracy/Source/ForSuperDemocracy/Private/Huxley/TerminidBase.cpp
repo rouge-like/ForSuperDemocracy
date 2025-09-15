@@ -76,6 +76,12 @@ ATerminidBase::ATerminidBase()
     SpawnAnimationDuration = 2.0f;
     AttackAnimationDuration = 1.0f; // 공격 애니메이션 기본 1초
     
+    // 체력 회복 관련 초기화
+    HealthRegenerationRate = 10.0f; // 초당 10 체력 회복
+    HealthRegenerationDelay = 0.0f; // 지연 시간 없이 상시 회복
+    LastDamageTime = 0.0f;
+    bIsRegeneratingHealth = false;
+
     // 소음 감지 관련 초기화
     NoiseDetectionRange = 1000.0f; // 기본 1000 유닛
     LastHeardNoiseLocation = FVector::ZeroVector;
@@ -90,7 +96,7 @@ void ATerminidBase::BeginPlay()
     // HealthComponent 초기화 및 이벤트 바인딩
     if (Health)
     {
-        Health->OnDamaged.AddDynamic(this, &ATerminidBase::OnDamaged);
+        Health->OnDamaged.AddDynamic(this, +&ATerminidBase::OnDamaged);
         Health->OnDeath.AddDynamic(this, &ATerminidBase::OnHealthComponentDeath);
     }
     
@@ -122,6 +128,7 @@ void ATerminidBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
         GetWorld()->GetTimerManager().ClearTimer(SpawnTimerHandle);
         GetWorld()->GetTimerManager().ClearTimer(HurtRecoveryTimerHandle);
         GetWorld()->GetTimerManager().ClearTimer(BurrowEmergeTimerHandle);
+        GetWorld()->GetTimerManager().ClearTimer(HealthRegenerationTimerHandle);
     }
     
     Super::EndPlay(EndPlayReason);
@@ -146,6 +153,9 @@ void ATerminidBase::Tick(float DeltaTime)
         StateMachine->UpdateStateMachine(DeltaTime);
     }
     
+    // 체력 회복 처리
+    ProcessHealthRegeneration(DeltaTime);
+
     // 타겟과의 거리 업데이트
     if (bHasTarget && CurrentTarget)
     {
@@ -378,16 +388,22 @@ void ATerminidBase::OnDamaged(float Damage, AActor* DamageCauser, AController* E
 {
     // 피격 시간 기록
     LastHurtTime = GetWorld()->GetTimeSeconds();
-    
+
+    // 데미지 시간 업데이트 (체력 회복용)
+    LastDamageTime = GetWorld()->GetTimeSeconds();
+
+    // 체력 회복 중단
+    StopHealthRegeneration();
+
     // 공격 애니메이션 중단 (피격 시에는 애니메이션 중단 허용)
     if (bIsPlayingAttackAnimation)
     {
         CompleteAttackAnimation();
     }
-    
+
     // 기존 타이머 취소
     GetWorld()->GetTimerManager().ClearTimer(HurtRecoveryTimerHandle);
-    
+
     // FSM 상태 변경 - Hurt 상태로
     if (StateMachine && IsAlive())
     {
@@ -916,16 +932,68 @@ void ATerminidBase::CompleteSpawnSequence()
     GetWorld()->GetTimerManager().ClearTimer(SpawnTimerHandle);
 }
 
+// 체력 회복 시스템
+void ATerminidBase::StartHealthRegeneration()
+{
+    if (!bIsRegeneratingHealth && HealthRegenerationRate > 0.0f)
+    {
+        bIsRegeneratingHealth = true;
+
+        // 회복 타이머 시작 (0.1초마다 체력 회복)
+        GetWorld()->GetTimerManager().SetTimer(
+            HealthRegenerationTimerHandle,
+            [this]() {
+                if (Health && IsAlive())
+                {
+                    float RegenAmount = HealthRegenerationRate * 0.1f; // 0.1초마다 회복량
+                    Health->Heal(RegenAmount);
+
+                    // 최대 체력에 도달하면 회복 중단
+                    if (Health->GetHealthPercent() >= 1.0f)
+                    {
+                        StopHealthRegeneration();
+                    }
+                }
+            },
+            0.1f, // 0.1초 간격
+            true  // 반복
+        );
+    }
+}
+
+void ATerminidBase::StopHealthRegeneration()
+{
+    if (bIsRegeneratingHealth)
+    {
+        bIsRegeneratingHealth = false;
+        GetWorld()->GetTimerManager().ClearTimer(HealthRegenerationTimerHandle);
+    }
+}
+
+void ATerminidBase::ProcessHealthRegeneration(float DeltaTime)
+{
+    if (!IsAlive() || HealthRegenerationRate <= 0.0f)
+    {
+        return;
+    }
+
+    // 상시 회복 시스템 - 지연 시간 없이 즐시 시작
+    if (!bIsRegeneratingHealth)
+    {
+        StartHealthRegeneration();
+    }
+}
+
 #if WITH_EDITOR
 void ATerminidBase::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
     Super::PostEditChangeProperty(PropertyChangedEvent);
-    
+
     // 에디터에서 속성 변경 시 처리
     if (PropertyChangedEvent.Property)
     {
         FName PropertyName = PropertyChangedEvent.Property->GetFName();
-        
+
         if (PropertyName == GET_MEMBER_NAME_CHECKED(ATerminidBase, BaseStats))
         {
             // HealthComponent 최대체력은 HealthComponent 내부에서 관리

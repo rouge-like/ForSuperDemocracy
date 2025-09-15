@@ -71,8 +71,10 @@ protected:
     void UpdateGroupBehavior(float DeltaTime);
     void CheckForNearbyScavengers();
     
-    // 빠른 이동 처리
+    // 이동 처리
     void ProcessQuickMovement(const FVector& TargetLocation, float DeltaTime);
+    void ProcessIdleMovement(float DeltaTime);
+    void ProcessZigzagChase(float DeltaTime);
     
     // 그룹 기반 공격력 계산
     float GetGroupAttackMultiplier() const;
@@ -88,7 +90,17 @@ private:
     FVector FleeTargetLocation;
     bool bIsFleeingActive;
     float FleeStartTime;
-    
+
+    // Idle 상태 랜덤 이동 관련
+    FVector IdleTargetLocation;
+    bool bHasIdleTarget;
+    float IdleTargetReachThreshold;
+
+    // Chase 상태 지그재그 이동 관련
+    FVector ZigzagTargetLocation;
+    bool bIsZigzagging;
+    float LastZigzagTime;
+
     // 그룹 멤버 참조
     UPROPERTY()
     TArray<ATerminidScavenger*> GroupMembers;
