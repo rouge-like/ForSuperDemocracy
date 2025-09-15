@@ -238,7 +238,7 @@ void ASuperPlayerController::Reload(const FInputActionValue& Value)
 void ASuperPlayerController::Dive(const FInputActionValue& Value)
 {
 	PlayerFSMComp->SetPlayerState(EPlayerState::Prone);
-	//AimingStart(0);
+	AimingStart(0);
 }
 
 void ASuperPlayerController::Salute(const FInputActionValue& Value)
