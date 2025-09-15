@@ -70,7 +70,8 @@ void UHealthComponent::ApplyDamage(float Amount, AActor* DamageCauser, AControll
 
     if (AActor* Owner = GetOwner())
     {
-        UGameplayStatics::ApplyDamage(Owner, Amount, InstigatedBy, DamageCauser, DamageType);
+        ApplyDamageInternal(Amount, DamageCauser, InstigatedBy, nullptr);
+        //UGameplayStatics::ApplyDamage(Owner, Amount, InstigatedBy, DamageCauser, DamageType);
     }
 }
 
