@@ -66,6 +66,13 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Recoil")
     float RecoilYawMax = 0.4f;    // 요 최대 반동
 
+    // 카메라 킥백(뒤로 밀림) 거리 범위(cm)
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Recoil")
+    float CameraKickBackMin = 2.0f;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Recoil")
+    float CameraKickBackMax = 5.0f;
+
     // 스프레드/블룸 파라미터(도 단위)
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Spread")
     float BaseSpread = 0.3f;      // 기본 스프레드(원뿔 반각)
@@ -82,7 +89,7 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Spread")
     float SpreadRecoveryPerSec = 3.0f;
 
-	// 반동 회복 속도
+	// 반동분자 회복 속도
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Recover")
 	float RecoverDegPerSec = 60.f;
 

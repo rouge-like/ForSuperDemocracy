@@ -10,6 +10,7 @@
 #include "LEH/PlayerFSM.h"
 #include "LEH/SuperPlayerController.h"
 #include "OSC/Weapon/WeaponComponent.h"
+#include "OSC/Weapon/WeaponBase.h"
 
 // Sets default values
 APlayerCharacter::APlayerCharacter()
@@ -43,17 +44,25 @@ APlayerCharacter::APlayerCharacter()
 // Called when the game starts or when spawned
 void APlayerCharacter::BeginPlay()
 {
-	Super::BeginPlay();
+    Super::BeginPlay();
 
-	// Weapon 부착
-	// FAttachmentTransformRules AttachRules(EAttachmentRule::SnapToTarget, true);
-	// ChildActor->AttachToComponent(GetMesh(), AttachRules, FName("hand_r_socket"));
+    // Weapon 부착
+    // FAttachmentTransformRules AttachRules(EAttachmentRule::SnapToTarget, true);
+    // ChildActor->AttachToComponent(GetMesh(), AttachRules, FName("hand_r_socket"));
+
+    // Camera kick 초기화
+    if (IsValid(SpringArm))
+    {
+        DefaultArmLength = SpringArm->TargetArmLength;
+    }
+
+	WeaponComp->OnWeaponFired.AddDynamic(this, &APlayerCharacter::ApplyCameraKick);
 }
 
 // Called every frame
 void APlayerCharacter::Tick(float DeltaTime)
 {
-	Super::Tick(DeltaTime);
+    Super::Tick(DeltaTime);
 
 	if (bIsZooming)
 	{
@@ -74,13 +83,26 @@ void APlayerCharacter::Tick(float DeltaTime)
 		}
 	}
 
-	if (bIsPlayerSalute)
-	{
-		if (FSMComp->GetPlayerState() != EPlayerState::Salute)
-		{
-			StopSaluteMontage();
-		}
-	}
+    if (bIsPlayerSalute)
+    {
+        if (FSMComp->GetPlayerState() != EPlayerState::Salute)
+        {
+            StopSaluteMontage();
+        }
+    }
+
+    // Camera kickback 복구 처리
+    if (IsValid(SpringArm))
+    {
+        if (CurrentCameraKick > 0.f)
+        {
+            const float Recover = CameraKickReturnSpeed * DeltaTime;
+            const float Step = FMath::Min(CurrentCameraKick, Recover);
+            CurrentCameraKick -= Step;
+        }
+        // 기본 길이 + 현재 킥백 반영
+        SpringArm->TargetArmLength = DefaultArmLength + CurrentCameraKick;
+    }
 }
 
 // Called to bind functionality to input
@@ -181,14 +203,20 @@ void APlayerCharacter::PlaySaluteMontage()
 
 void APlayerCharacter::StopSaluteMontage()
 {
-	auto anim = Cast<UPlayerAnimInstance>(GetMesh()->GetAnimInstance());
-	if (anim)
-	{
-		bIsPlayerSalute = false;
+    auto anim = Cast<UPlayerAnimInstance>(GetMesh()->GetAnimInstance());
+    if (anim)
+    {
+        bIsPlayerSalute = false;
 
-		anim->StopCurrentAnimation();
-		ChildActor->SetVisibility(true);
-	}
+        anim->StopCurrentAnimation();
+        ChildActor->SetVisibility(true);
+    }
 }
 
 
+void APlayerCharacter::ApplyCameraKick(AWeaponBase* Weapon)
+{
+    if (!IsValid(SpringArm)) return;
+	
+    CurrentCameraKick += 5.0f;
+}
