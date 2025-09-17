@@ -3,7 +3,10 @@
 
 #include "LEH/PlayerCharacter.h"
 
+#include <ThirdParty/hlslcc/hlslcc/src/hlslcc_lib/compiler.h>
+
 #include "Camera/CameraComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "LEH/PlayerAnimInstance.h"
@@ -45,9 +48,6 @@ void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// Weapon 부착
-	// FAttachmentTransformRules AttachRules(EAttachmentRule::SnapToTarget, true);
-	// ChildActor->AttachToComponent(GetMesh(), AttachRules, FName("hand_r_socket"));
 }
 
 // Called every frame
@@ -55,23 +55,45 @@ void APlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	// Zoom in lerp
 	if (bIsZooming)
 	{
-		CurrentLerpAlpha = FMath::Clamp(CurrentLerpAlpha+DeltaTime*LerpSpeed, 0.0f, 1.0f);
+		CurrentLerpAlpha1 = FMath::Clamp(CurrentLerpAlpha1+DeltaTime*LerpSpeed, 0.0f, 1.0f);
 
-		float NewFOV = FMath::Lerp(ZoomStartFOV, ZoomTargetFOV, CurrentLerpAlpha);
+		float NewFOV = FMath::Lerp(ZoomStartFOV, ZoomTargetFOV, CurrentLerpAlpha1);
 		Camera->SetFieldOfView(NewFOV);
 
-		if (FMath::IsNearlyEqual(CurrentLerpAlpha, 1.f, 0.001f))
+		if (FMath::IsNearlyEqual(CurrentLerpAlpha1, 1.f, 0.001f))
 		{
 			if (ZoomTargetFOV == MinFOV)
 			{
 				OnZoomInCompleted.Broadcast();
 			}
 			
-			CurrentLerpAlpha = 0.f;
+			CurrentLerpAlpha1 = 0.f;
 			bIsZooming = false;
 		}
+	}
+
+	// Camera Prone
+	if (bIsCameraProning)
+	{
+		CurrentLerpAlpha2 = FMath::Clamp(CurrentLerpAlpha2+DeltaTime*CameraLerpSpeed, 0.0f, 1.0f);
+		float EasedAlpha = bEasingFlag ? easeOutCubic(CurrentLerpAlpha2) : easeInCubic(CurrentLerpAlpha2);
+
+		float NewZLoc = FMath::Lerp(StartZ, TargetZ, EasedAlpha);
+
+		FVector CurrentLocation = SpringArm->GetRelativeLocation();
+		FVector NewLocation = FVector(CurrentLocation.X, CurrentLocation.Y, NewZLoc);
+		SpringArm->SetRelativeLocation(NewLocation);
+
+		if (FMath::IsNearlyEqual(CurrentLerpAlpha2, 1.f, 0.001f))
+		{
+			CurrentLerpAlpha2 = 0.f;
+			
+			bIsCameraProning = false;
+		}
+		
 	}
 
 	if (bIsPlayerSalute)
@@ -81,13 +103,6 @@ void APlayerCharacter::Tick(float DeltaTime)
 			StopSaluteMontage();
 		}
 	}
-}
-
-// Called to bind functionality to input
-void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
 }
 
 void APlayerCharacter::OnConstruction(const FTransform& Transform)
@@ -106,18 +121,18 @@ void APlayerCharacter::OnConstruction(const FTransform& Transform)
 void APlayerCharacter::StartZoom(bool IsAiming)
 {
 	bIsZooming = true;
-
+	
 	if (IsAiming)
 	{
 		ZoomStartFOV = Camera->FieldOfView; // 현재 FOV에서 시작
 		ZoomTargetFOV = MinFOV;
-		CurrentLerpAlpha = 0.0f;
+		CurrentLerpAlpha1 = 0.0f;
 	}
 	else
 	{
 		ZoomStartFOV = Camera->FieldOfView;
 		ZoomTargetFOV = MaxFOV;
-		CurrentLerpAlpha = 0.0f;
+		CurrentLerpAlpha1 = 0.0f;
 	}
 }
 
@@ -135,6 +150,47 @@ FRotator APlayerCharacter::GetCameraAim()
 
 	// 컨트롤러가 없는 경우(예: AI에 의해 제어될 때)를 위한 대체 동작
 	return GetBaseAimRotation();
+}
+
+void APlayerCharacter::StartCameraProne(bool IsProning)
+{
+	bIsCameraProning = true;
+
+	FTimerHandle TimerHandle;
+
+	// prone <-> idle/move 사이 움직일 텀 필요
+	GetCharacterMovement()->SetMovementMode(MOVE_None);
+	GetWorldTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda([&]
+	{
+		GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+	}), 0.1f, false);
+	
+	if (IsProning)
+	{
+		StartZ = SpringArm->GetRelativeLocation().Z;
+		TargetZ = MinHeight;
+		CurrentLerpAlpha2 = 0.0f;
+
+		bEasingFlag = true;
+	}
+	else
+	{
+		StartZ = SpringArm->GetRelativeLocation().Z;
+		TargetZ = MaxHeight;
+		CurrentLerpAlpha2 = 0.0f;
+
+		bEasingFlag = false;
+	}
+}
+
+float APlayerCharacter::easeOutCubic(float x)
+{
+	return 1 - FMath::Pow(1 - x, 3);
+}
+
+float APlayerCharacter::easeInCubic(float x)
+{
+	return x * x * x;
 }
 
 void APlayerCharacter::PlayReloadMontage()

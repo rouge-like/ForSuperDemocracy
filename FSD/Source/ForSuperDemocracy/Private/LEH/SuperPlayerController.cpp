@@ -30,7 +30,7 @@ void ASuperPlayerController::BeginPlay()
 	}
 
 	// Get owning player FSM
-	PlayerFSMComp = GetPawn()->FindComponentByClass<UPlayerFSM>();
+	FSM = GetPawn()->FindComponentByClass<UPlayerFSM>();
 
 	// Get owning player weapon component
 	WeaponComp = GetPawn()->FindComponentByClass<UWeaponComponent>();
@@ -70,8 +70,8 @@ void ASuperPlayerController::SetupInputComponent()
 		// Reload
 		EnhancedInput->BindAction(ReloadAction, ETriggerEvent::Started, this, &ASuperPlayerController::Reload);
 
-		// Dive
-		EnhancedInput->BindAction(DiveAction, ETriggerEvent::Started, this, &ASuperPlayerController::Dive);
+		// Prone
+		EnhancedInput->BindAction(ProneAction, ETriggerEvent::Started, this, &ASuperPlayerController::Prone);
 
 		// Salute
 		EnhancedInput->BindAction(SaluteAction, ETriggerEvent::Started, this, &ASuperPlayerController::Salute);
@@ -100,18 +100,23 @@ void ASuperPlayerController::Move(const FInputActionValue& Value)
 
 void ASuperPlayerController::MoveStart(const FInputActionValue& Value)
 {
-	if (IsValid(PlayerFSMComp))
+	if (FSM->GetPlayerState() == EPlayerState::Prone)
 	{
-		PlayerFSMComp->SetPlayerState(EPlayerState::Move);
+		return;
 	}
+	
+	FSM->SetPlayerState(EPlayerState::Move);
 }
 
 void ASuperPlayerController::MoveEnd(const FInputActionValue& Value)
 {
-	if (IsValid(PlayerFSMComp))
+	
+	if (FSM->GetPlayerState() == EPlayerState::Prone)
 	{
-		PlayerFSMComp->SetPlayerState(EPlayerState::Idle);
+		return;
 	}
+	
+	FSM->SetPlayerState(EPlayerState::Idle);
 }
 
 void ASuperPlayerController::Look(const FInputActionValue& Value)
@@ -124,7 +129,7 @@ void ASuperPlayerController::Look(const FInputActionValue& Value)
 
 void ASuperPlayerController::SprintStart(const FInputActionValue& Value)
 {
-	if (bIsAiming || bIsReloading)
+	if (bIsAiming || bIsReloading || FSM->GetPlayerState() == EPlayerState::Prone)
 	{
 		return;
 	}
@@ -134,7 +139,7 @@ void ASuperPlayerController::SprintStart(const FInputActionValue& Value)
 
 void ASuperPlayerController::SprintEnd(const FInputActionValue& Value)
 {
-	if (bIsAiming)
+	if (bIsAiming || bIsReloading || FSM->GetPlayerState() == EPlayerState::Prone)
 	{
 		return;
 	}
@@ -148,11 +153,19 @@ void ASuperPlayerController::AimingStart(const FInputActionValue& Value)
 	{
 		return;
 	}
+
+	// 엎드리기 중이면 움직일 수 없음
+	if (FSM->GetPlayerState() == EPlayerState::Prone)
+	{
+		//PlayerCharacter->GetCharacterMovement()->SetMovementMode(MOVE_None);
+	}
 	
 	bIsAiming = true;
 	PlayerCharacter->bIsPlayerAiming = true;
-	PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed = AimingSpeed;
-		
+
+	PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed *= 0.5f;
+
+	
 	WeaponComp->StartAiming();
 		
 	// Actor rotation
@@ -167,14 +180,23 @@ void ASuperPlayerController::AimingStart(const FInputActionValue& Value)
 
 void ASuperPlayerController::AimingEnd(const FInputActionValue& Value)
 {
-	//if (bIsReloading || !bIsAiming)
-	//{
-	//	return;
-	//}
-
+	if (!bIsAiming)
+	{
+		return;
+	}
+	
+	if (FSM->GetPlayerState() == EPlayerState::Prone)
+	{
+		PlayerCharacter->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+	}
+	else
+	{
+		
+	}
+	
 	bIsAiming = false;
 	PlayerCharacter->bIsPlayerAiming = false;
-	PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+	PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed *= 2.f;
 		
 	WeaponComp->StopAiming();
 
@@ -235,14 +257,32 @@ void ASuperPlayerController::Reload(const FInputActionValue& Value)
 	}
 }
 
-void ASuperPlayerController::Dive(const FInputActionValue& Value)
+void ASuperPlayerController::Prone(const FInputActionValue& Value)
 {
-	PlayerFSMComp->SetPlayerState(EPlayerState::Prone);
-	AimingStart(0);
+	if (FSM->GetPlayerState() != EPlayerState::Prone)
+	{
+		FSM->SetPlayerState(EPlayerState::Prone);
+		
+		PlayerCharacter->StartCameraProne(true);
+		PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed = CrawlSpeed;
+	}
+	else
+	{
+		FTimerHandle TimerHandle;
+		GetWorldTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda([&]
+		{
+			float CurrentSpeed = PlayerCharacter->GetCharacterMovement()->Velocity.Length();
+			FSM->SetPlayerState(CurrentSpeed > 0 ? EPlayerState::Move : EPlayerState::Idle);
+
+		}), 0.11f, false);
+		
+		PlayerCharacter->StartCameraProne(false);
+		PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+	}
 }
 
 void ASuperPlayerController::Salute(const FInputActionValue& Value)
 {
-	PlayerFSMComp->SetPlayerState(EPlayerState::Salute);
+	FSM->SetPlayerState(EPlayerState::Salute);
 	PlayerCharacter->PlaySaluteMontage();
 }

@@ -11,7 +11,8 @@ enum class EPlayerState:uint8
 {
 	Idle, 
 	Move, // 걷기, 달리기
-	Prone, // 엎드리기, 다이빙
+	Prone, // 엎드리기
+	Dive, // 다이빙해서 엎드리기
 	Damage,
 	Die,
 	Salute, // 경례

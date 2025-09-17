@@ -26,9 +26,6 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
 public:
 	void OnConstruction(const FTransform& Transform) override;
 	// Components
@@ -49,21 +46,21 @@ public:
 
 protected:
 	// FOV lerp
-	UPROPERTY(EditDefaultsOnly, Category=FOV)
+	UPROPERTY(EditDefaultsOnly, Category=FOVLerp)
 	float MaxFOV = 90.f;
 
-	UPROPERTY(EditDefaultsOnly, Category=FOV)
-	float MinFOV = 70.f;
+	UPROPERTY(EditDefaultsOnly, Category=FOVLerp)
+	float MinFOV = 40.f;
 
-	UPROPERTY(EditAnywhere, Category=FOV)
-	float LerpSpeed = 5.f;
+	UPROPERTY(EditAnywhere, Category=FOVLerp)
+	float LerpSpeed = 3.5f;
 	
 	bool bIsZooming = false;
 	
 	float ZoomStartFOV;
 	float ZoomTargetFOV;
 	
-	float CurrentLerpAlpha = 0.f;
+	float CurrentLerpAlpha1 = 0.f;
 
 public:
 	UPROPERTY(BlueprintAssignable)
@@ -76,6 +73,30 @@ public:
 	bool bIsPlayerAiming = false;
 
 	FRotator GetCameraAim();
+
+public:
+	// Camera Prone
+	UPROPERTY(EditDefaultsOnly, Category=CameraProne)
+	float MaxHeight = 0.f;
+
+	UPROPERTY(EditDefaultsOnly, Category=CameraProne)
+	float MinHeight = -100.f;
+
+	UPROPERTY(EditAnywhere, Category=CameraProne)
+	float CameraLerpSpeed = 1.5f;
+	
+	bool bIsCameraProning = false;
+	bool bEasingFlag = true;
+	
+	float StartZ;
+	float TargetZ;
+
+	float CurrentLerpAlpha2 = 0.f;
+	
+	void StartCameraProne(bool IsProning);
+	
+	float easeOutCubic(float x);
+	float easeInCubic(float x);
 
 public:
 	// Montage
