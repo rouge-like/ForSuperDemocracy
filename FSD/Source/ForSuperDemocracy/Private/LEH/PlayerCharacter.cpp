@@ -56,6 +56,11 @@ void APlayerCharacter::BeginPlay()
 		HealthComp->OnDamaged.AddDynamic(this, &APlayerCharacter::OnDamaged);
 		HealthComp->OnDeath.AddDynamic(this, &APlayerCharacter::OnDeath);
 	}
+
+	if (WeaponComp)
+	{
+		WeaponComp->OnWeaponFired.AddDynamic(this, &APlayerCharacter::OnWeaponFired);
+	}
 }
 
 // Called every frame
@@ -226,6 +231,11 @@ float APlayerCharacter::easeOutCubic(float x)
 float APlayerCharacter::easeInCubic(float x)
 {
 	return x * x * x;
+}
+
+void APlayerCharacter::OnWeaponFired(AWeaponBase* Weapon)
+{
+	PlayFireMontage();
 }
 
 void APlayerCharacter::PlayReloadMontage()

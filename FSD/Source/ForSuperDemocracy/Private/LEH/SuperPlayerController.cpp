@@ -221,7 +221,7 @@ void ASuperPlayerController::FireStart(const FInputActionValue& Value)
 	{
 		if (IsValid(WeaponComp))
 		{
-			PlayerCharacter->PlayFireMontage();
+			//PlayerCharacter->PlayFireMontage();
 			WeaponComp->StartFire();
 		}
 	}

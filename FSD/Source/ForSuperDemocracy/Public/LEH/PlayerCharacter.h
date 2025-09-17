@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "OSC/Weapon/WeaponBase.h"
 
 #include "PlayerCharacter.generated.h"
 
@@ -113,6 +114,11 @@ public:
 	float easeOutCubic(float x);
 	float easeInCubic(float x);
 
+public:
+	// Fire
+	UFUNCTION()
+	void OnWeaponFired(AWeaponBase* Weapon);
+	
 public:
 	// Montage
 	void PlayReloadMontage();
