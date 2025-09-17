@@ -14,7 +14,7 @@ enum class EPlayerState:uint8
 	Prone, // 엎드리기
 	Dive, // 다이빙해서 엎드리기
 	Damage,
-	Die,
+	Dead,
 	Salute, // 경례
 };
 
@@ -35,13 +35,16 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-public:
-	EPlayerState GetPlayerState();
-	void SetPlayerState(EPlayerState NewState);
-	
 protected:
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = FSM)
 	EPlayerState _State = EPlayerState::Idle;
+	
+public:
+	// State getter, setter
+	EPlayerState GetPlayerState();
+	void SetPlayerState(EPlayerState NewState);
 
+	EPlayerState PreviousState;
+	EPlayerState GetPreviousPlayerState();
 	
 };

@@ -5,6 +5,7 @@
 
 #include <ThirdParty/hlslcc/hlslcc/src/hlslcc_lib/compiler.h>
 
+#include "NiagaraValidationRule.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -12,6 +13,7 @@
 #include "LEH/PlayerAnimInstance.h"
 #include "LEH/PlayerFSM.h"
 #include "LEH/SuperPlayerController.h"
+#include "OSC/HealthComponent.h"
 #include "OSC/Weapon/WeaponComponent.h"
 
 // Sets default values
@@ -31,6 +33,7 @@ APlayerCharacter::APlayerCharacter()
 	
 	FSMComp = CreateDefaultSubobject<UPlayerFSM>(TEXT("FSMComponent"));
 	WeaponComp = CreateDefaultSubobject<UWeaponComponent>(TEXT("WeaponComponent"));
+	HealthComp = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
 	
 	ConstructorHelpers::FObjectFinder<USkeletalMesh> BodyMeshTemp(TEXT("/Script/Engine.SkeletalMesh'/Game/PROJECTS/HELLDIVERS_2/CHARACTERS/PLAYER/B-01_TACTICAL/fix_v2/SKM_B-01_v1_BRAWNY_SIMPLE.SKM_B-01_v1_BRAWNY_SIMPLE'"));
 	if (BodyMeshTemp.Succeeded())
@@ -48,6 +51,11 @@ void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
+	if (HealthComp)
+	{
+		HealthComp->OnDamaged.AddDynamic(this, &APlayerCharacter::OnDamaged);
+		HealthComp->OnDeath.AddDynamic(this, &APlayerCharacter::OnDeath);
+	}
 }
 
 // Called every frame
@@ -55,7 +63,7 @@ void APlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	// Zoom in lerp
+	// FOV lerp
 	if (bIsZooming)
 	{
 		CurrentLerpAlpha1 = FMath::Clamp(CurrentLerpAlpha1+DeltaTime*LerpSpeed, 0.0f, 1.0f);
@@ -75,7 +83,7 @@ void APlayerCharacter::Tick(float DeltaTime)
 		}
 	}
 
-	// Camera Prone
+	// Camera height Prone
 	if (bIsCameraProning)
 	{
 		CurrentLerpAlpha2 = FMath::Clamp(CurrentLerpAlpha2+DeltaTime*CameraLerpSpeed, 0.0f, 1.0f);
@@ -117,6 +125,33 @@ void APlayerCharacter::OnConstruction(const FTransform& Transform)
 	ChildActor->SetRelativeLocation(FVector(-0.5f, 8.5f, -1.0f));
 	ChildActor->SetRelativeRotation(FRotator(0, 0, 0));
 }
+
+void APlayerCharacter::OnDamaged(float Damage, AActor* DamageCauser, AController* EventInstigator,
+	TSubclassOf<UDamageType> DamageType)
+{
+	// 뭘 넣어야해?
+	// 데미지 받았을 때 뭘 할거야?
+	// 1. 피격 애니메이션 재생
+	if(FSMComp->GetPlayerState() == EPlayerState::Damage || FSMComp->GetPlayerState() == EPlayerState::Dead)
+	{
+		return;
+	}
+	
+	FSMComp->SetPlayerState(EPlayerState::Damage);
+	
+	GetWorldTimerManager().SetTimer(DamageTimerHandle, FTimerDelegate::CreateLambda([&]
+	{
+		FSMComp->SetPlayerState(FSMComp->GetPreviousPlayerState());
+		
+	}), DamageTime, false);
+}
+
+void APlayerCharacter::OnDeath(AActor* Victim)
+{
+	GetWorldTimerManager().ClearTimer(DamageTimerHandle);
+	FSMComp->SetPlayerState(EPlayerState::Dead);
+}
+
 
 void APlayerCharacter::StartZoom(bool IsAiming)
 {
@@ -237,13 +272,14 @@ void APlayerCharacter::PlaySaluteMontage()
 
 void APlayerCharacter::StopSaluteMontage()
 {
+	ChildActor->SetVisibility(true);
+	
 	auto anim = Cast<UPlayerAnimInstance>(GetMesh()->GetAnimInstance());
 	if (anim)
 	{
 		bIsPlayerSalute = false;
 
 		anim->StopCurrentAnimation();
-		ChildActor->SetVisibility(true);
 	}
 }
 

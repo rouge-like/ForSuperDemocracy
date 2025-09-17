@@ -44,6 +44,21 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	class UWeaponComponent* WeaponComp;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	class UHealthComponent* HealthComp;
+
+public:
+	// Damage
+	float DamageTime = 1.f;
+	FTimerHandle DamageTimerHandle;
+	
+	UFUNCTION()
+	void OnDamaged(float Damage, AActor* DamageCauser, AController* EventInstigator, TSubclassOf<UDamageType> DamageType);
+
+public:
+	UFUNCTION()
+	void OnDeath(AActor* Victim);
+	
 protected:
 	// FOV lerp
 	UPROPERTY(EditDefaultsOnly, Category=FOVLerp)

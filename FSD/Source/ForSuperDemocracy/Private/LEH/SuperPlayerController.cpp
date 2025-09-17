@@ -110,7 +110,6 @@ void ASuperPlayerController::MoveStart(const FInputActionValue& Value)
 
 void ASuperPlayerController::MoveEnd(const FInputActionValue& Value)
 {
-	
 	if (FSM->GetPlayerState() == EPlayerState::Prone)
 	{
 		return;
@@ -238,6 +237,12 @@ void ASuperPlayerController::FireEnd(const FInputActionValue& Value)
 
 void ASuperPlayerController::Reload(const FInputActionValue& Value)
 {
+	// salute 중이었으면 다시 손에 무기 들려주기
+	if (FSM->GetPreviousPlayerState() == EPlayerState::Salute)
+	{
+		PlayerCharacter->StopSaluteMontage();
+	}
+	
 	if (!bIsReloading)
 	{
 		bIsReloading = true;
