@@ -40,6 +40,11 @@ void UMissionComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 void UMissionComponent::StartMission()
 {
     // 초기화 및 첫 목표 시작
+    if (!MissionData)
+    {
+        if(GEngine) GEngine->AddOnScreenDebugMessage(-1, 1.5f, FColor::Green, FString::Printf(TEXT("Mission Data null")));
+        return;
+    }
     if (!MissionData || MissionData->Objectives.Num() == 0)
     {
         UE_LOG(LogTemp, Warning, TEXT("MissionComponent::StartMission - MissionData is empty"));

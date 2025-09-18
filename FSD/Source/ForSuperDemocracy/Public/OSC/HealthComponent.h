@@ -13,13 +13,13 @@ struct FHitResult;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnHealthChanged, float, MaxHealth, float, CurrentHealth);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FOnDamaged, float, Damage, AActor*, DamageCauser, AController*, InstigatedBy, TSubclassOf<UDamageType>, DamageType);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDeath, AActor*, Victim);
-// Ragdoll state events
+// 래그돌 상태 이벤트
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRagdollStart, AActor*, OwnerActor);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRagdollEnd, AActor*, OwnerActor);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class FORSUPERDEMOCRACY_API UHealthComponent : public UActorComponent
-{
+{ 
     GENERATED_BODY()
 
 public:	

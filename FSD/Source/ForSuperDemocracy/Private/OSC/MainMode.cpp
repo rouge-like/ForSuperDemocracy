@@ -13,6 +13,5 @@ AMainMode::AMainMode()
 void AMainMode::BeginPlay()
 {
 	Super::BeginPlay();
-
-	MissionComponent->StartMission();
+	
 }

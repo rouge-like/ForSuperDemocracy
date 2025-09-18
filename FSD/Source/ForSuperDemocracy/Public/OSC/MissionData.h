@@ -58,7 +58,7 @@ struct FMissionObjective
 
     // UI 표기용 라벨
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mission|UI")
-    FText Label;
+    FString Label;
 };
 
 /**

@@ -105,7 +105,7 @@ protected:
 
     // 데이터/상태
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mission")
-    TObjectPtr<UMissionData> MissionData = nullptr;
+    TObjectPtr<UMissionData> MissionData;
 
     UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Mission")
     int32 ObjectiveIndex = INDEX_NONE;
