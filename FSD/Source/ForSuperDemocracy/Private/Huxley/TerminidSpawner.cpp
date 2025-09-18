@@ -102,16 +102,16 @@ ATerminidBase* ATerminidSpawner::SpawnTerminid(ETerminidType TerminidType, const
 	}
 
 	// 스폰 위치 유효성 검사
-	if (!IsSpawnLocationValid(SpawnLocation))
-	{
-		return nullptr;
-	}
+	// if (!IsSpawnLocationValid(SpawnLocation))
+	// {
+	// 	return nullptr;
+	// }
 
 	// Terminid 스폰
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Owner = this;
 	SpawnParams.Instigator = nullptr;
-
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	ATerminidBase* NewTerminid = GetWorld()->SpawnActor<ATerminidBase>(
 		TerminidClass,
 		SpawnLocation,
