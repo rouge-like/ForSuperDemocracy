@@ -65,8 +65,10 @@ void UPlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		// Aiming
 		bIsAiming = PlayerCharacter->bIsPlayerAiming;
 		AimingLocation = PlayerCharacter->GetCameraAim();
+
+		// Current weapon
+		CurrentWeapon = PlayerCharacter->GetCurrentWeaponIdx();
 	}
-		
 }
 
 void UPlayerAnimInstance::PlayReloadAnimation()
