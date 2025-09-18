@@ -3,9 +3,6 @@
 
 #include "LEH/PlayerCharacter.h"
 
-#include <ThirdParty/hlslcc/hlslcc/src/hlslcc_lib/compiler.h>
-
-#include "NiagaraValidationRule.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -15,6 +12,7 @@
 #include "LEH/SuperPlayerController.h"
 #include "OSC/HealthComponent.h"
 #include "OSC/Weapon/WeaponComponent.h"
+#include "OSC/Weapon/WeaponBase.h"
 
 // Sets default values
 APlayerCharacter::APlayerCharacter()
@@ -60,6 +58,17 @@ void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
+    // Weapon 부착
+    // FAttachmentTransformRules AttachRules(EAttachmentRule::SnapToTarget, true);
+    // ChildActor->AttachToComponent(GetMesh(), AttachRules, FName("hand_r_socket"));
+
+    // Camera kick 초기화
+    if (IsValid(SpringArm))
+    {
+        DefaultArmLength = SpringArm->TargetArmLength;
+    }
+
+	WeaponComp->OnWeaponFired.AddDynamic(this, &APlayerCharacter::ApplyCameraKick);
 	if (HealthComp)
 	{
 		HealthComp->OnDamaged.AddDynamic(this, &APlayerCharacter::OnDamaged);
@@ -77,7 +86,6 @@ void APlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	// FOV lerp
 	if (bIsZooming)
 	{
 		CurrentLerpAlpha1 = FMath::Clamp(CurrentLerpAlpha1+DeltaTime*LerpSpeed, 0.0f, 1.0f);
@@ -97,6 +105,26 @@ void APlayerCharacter::Tick(float DeltaTime)
 		}
 	}
 
+    if (bIsPlayerSalute)
+    {
+        if (FSMComp->GetPlayerState() != EPlayerState::Salute)
+        {
+            StopSaluteMontage();
+        }
+    }
+
+    // Camera kickback 복구 처리
+    if (IsValid(SpringArm))
+    {
+        if (CurrentCameraKick > 0.f)
+        {
+            const float Recover = CameraKickReturnSpeed * DeltaTime;
+            const float Step = FMath::Min(CurrentCameraKick, Recover);
+            CurrentCameraKick -= Step;
+        }
+        // 기본 길이 + 현재 킥백 반영
+        SpringArm->TargetArmLength = DefaultArmLength + CurrentCameraKick;
+    }
 	// Camera height Prone
 	if (bIsCameraProning)
 	{
@@ -193,7 +221,7 @@ void APlayerCharacter::OnDeath(AActor* Victim)
 void APlayerCharacter::StartZoom(bool IsAiming)
 {
 	bIsZooming = true;
-	
+
 	if (IsAiming)
 	{
 		ZoomStartFOV = Camera->FieldOfView; // 현재 FOV에서 시작
@@ -362,3 +390,9 @@ void APlayerCharacter::StopThrowMontage()
 }
 
 
+void APlayerCharacter::ApplyCameraKick(AWeaponBase* Weapon)
+{
+    if (!IsValid(SpringArm)) return;
+	
+    CurrentCameraKick += 5.0f;
+}

@@ -492,31 +492,31 @@ void ATerminidSpawner::SetupDefaultSpawnQueue()
 }
 
 // 파괴 시스템 구현
-float ATerminidSpawner::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, class AActor* DamageCauser)
-{
-	// 이미 파괴된 경우 데미지 무시
-	if (bIsDestroyed)
-	{
-		return 0.0f;
-	}
-
-	// 데미지 적용
-	CurrentHealth = FMath::Max(0.0f, CurrentHealth - DamageAmount);
-
-	// 디버그 프린트: 데미지 받음
-	UE_LOG(LogTemp, Warning, TEXT("Spawner Hit! Damage: %.1f, Health: %.1f/%.1f"), DamageAmount, CurrentHealth, MaxHealth);
-
-	// 폭발 이팩트 이벤트 호출 (Blueprint에서 구현)
-	OnExplosionHit(GetActorLocation(), DamageAmount);
-
-	// 체력이 0 이하가 되면 파괴
-	if (CurrentHealth <= 0.0f)
-	{
-		DestroySpawner();
-	}
-
-	return DamageAmount;
-}
+// float ATerminidSpawner::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, class AActor* DamageCauser)
+// {
+// 	// 이미 파괴된 경우 데미지 무시
+// 	if (bIsDestroyed)
+// 	{
+// 		return 0.0f;
+// 	}
+//
+// 	// 데미지 적용
+// 	CurrentHealth = FMath::Max(0.0f, CurrentHealth - DamageAmount);
+//
+// 	// 디버그 프린트: 데미지 받음
+// 	UE_LOG(LogTemp, Warning, TEXT("Spawner Hit! Damage: %.1f, Health: %.1f/%.1f"), DamageAmount, CurrentHealth, MaxHealth);
+//
+// 	// 폭발 이팩트 이벤트 호출 (Blueprint에서 구현)
+// 	OnExplosionHit(GetActorLocation(), DamageAmount);
+//
+// 	// 체력이 0 이하가 되면 파괴
+// 	if (CurrentHealth <= 0.0f)
+// 	{
+// 		DestroySpawner();
+// 	}
+//
+// 	return DamageAmount;
+// }
 
 void ATerminidSpawner::DestroySpawner()
 {

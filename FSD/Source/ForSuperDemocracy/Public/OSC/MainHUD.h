@@ -7,6 +7,7 @@
 #include "MainHUD.generated.h"
 
 class UMainUI;
+struct FMissionObjective;
 /**
  * 
  */
@@ -14,7 +15,7 @@ UCLASS()
 class FORSUPERDEMOCRACY_API AMainHUD : public AHUD
 {
 	GENERATED_BODY()
-	
+
 public:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
@@ -31,4 +32,11 @@ protected:
 public:
 	UFUNCTION(BlueprintCallable)
 	UMainUI* GetMainUI(){ return MainUI; }
+
+	UFUNCTION()
+	void OnMissionObjectiveChanged(const FMissionObjective& Objective);
+	UFUNCTION()
+	void OnMissionObjectiveUpdate(int32 Curr, int32 Target);
+	UFUNCTION()
+	void OnMissionTimerTick(int32 RemainSec);
 };
