@@ -248,7 +248,28 @@ float APlayerCharacter::easeInCubic(float x)
 
 void APlayerCharacter::OnWeaponFired(AWeaponBase* Weapon)
 {
-	PlayFireMontage();
+	if (CurrentWeaponIdx == 0)
+	{
+		PlayFireMontage();	
+	}
+	else
+	{
+		// 수류탄, 스트라타잼 던지기
+		if (!bStartThrowAim)
+		{
+			return;
+		}
+		
+		PlayThrowMontage();
+		bStartThrowAim = false;
+		
+		GetWorldTimerManager().SetTimer(ThrowAimTimerHandle, FTimerDelegate::CreateLambda([&]
+		{
+			bStartThrowAim = true;
+		
+		}), 1.f, false);
+	}
+	
 }
 
 void APlayerCharacter::PlayReloadMontage()
@@ -304,6 +325,21 @@ void APlayerCharacter::StopSaluteMontage()
 
 		anim->StopCurrentAnimation();
 	}
+}
+
+void APlayerCharacter::PlayThrowMontage()
+{
+	auto anim = Cast<UPlayerAnimInstance>(GetMesh()->GetAnimInstance());
+	if (anim)
+	{
+		anim->PlayThrowAnimation();
+	}
+}
+
+void APlayerCharacter::StopThrowMontage()
+{
+	GetWorldTimerManager().ClearTimer(ThrowAimTimerHandle);
+	bStartThrowAim = true;
 }
 
 

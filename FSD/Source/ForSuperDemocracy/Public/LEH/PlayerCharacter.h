@@ -138,8 +138,15 @@ public:
 	// Montage
 	void PlayReloadMontage();
 	void PlayFireMontage();
+
+	bool bIsPlayerSalute = false;
+	
 	void PlaySaluteMontage();
 	void StopSaluteMontage();
+
+	FTimerHandle ThrowAimTimerHandle;
+	bool bStartThrowAim = true;
 	
-	bool bIsPlayerSalute = false;
+	void PlayThrowMontage();
+	void StopThrowMontage();
 };
