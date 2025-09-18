@@ -327,6 +327,20 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Combat")
     void ProcessHealthRegeneration(float DeltaTime);
 
+    // 단순한 사격 소리 감지 시스템 (Blueprint에서 호출)
+    UFUNCTION(BlueprintCallable, Category = "AI")
+    virtual void OnGunfireDetected(FVector FireLocation, float Range);
+
+    UFUNCTION(BlueprintPure, Category = "AI")
+    bool IsSoundInRange(FVector SoundLocation, float SoundRange) const;
+
+    // 시야 감지 관련 변수들
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI")
+    float SightAngle; // 시야각 (도 단위)
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI")
+    float SightRange; // 시야 범위
+
     // 소음 감지 관련 변수들 (Blueprint에서 접근 가능)
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI")
     float NoiseDetectionRange;
@@ -339,6 +353,12 @@ public:
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI")
     float NoiseResponseDuration; // 소음 후 각성 상태 지속 시간
+
+    // 단순화된 소리 감지 범위
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI")
+    float SoundDetectionRange;
+
+protected:
 
 private:
     void UpdateMovement(float DeltaTime);

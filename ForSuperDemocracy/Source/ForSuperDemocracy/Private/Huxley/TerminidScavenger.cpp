@@ -33,6 +33,14 @@ ATerminidScavenger::ATerminidScavenger()
 
 	// 스캐빈저는 더 빠른 회복 (더 민첩한 유닛)
 	HurtRecoveryTime = 0.5f; // 기본 1.5초 -> 0.5초로 단축
+
+	// 스캐빈저 특화 감지 시스템 (매우 넓은 감지 범위)
+	SightAngle = 180.0f; // 기본 90도 -> 180도로 확장 (매우 넓은 시야각)
+	SightRange = 2500.0f; // 기본 800 -> 2500으로 대폭 확장 (매우 넓은 시야)
+
+	// 스캐빈저 특화 소리 감지 (더 예민함)
+	SoundDetectionRange = 2000.0f; // 기본 1500 -> 2000으로 확장
+	NoiseDetectionRange = 1500.0f; // 기본 1000 -> 1500으로 확장
 }
 
 void ATerminidScavenger::BeginPlay()
@@ -349,5 +357,28 @@ void ATerminidScavenger::ProcessZigzagChase(float DeltaTime)
 	if (!bIsZigzagging)
 	{
 		MoveTowardsLocation(CurrentTarget->GetActorLocation(), DeltaTime);
+	}
+}
+
+// 스캐빈저 특화 사격 소리 감지 (더 예민한 반응)
+void ATerminidScavenger::OnGunfireDetected(FVector FireLocation, float Range)
+{
+	// 부모 클래스 구현 먼저 호출
+	Super::OnGunfireDetected(FireLocation, Range);
+
+	// 스캐빈저는 사격 소리에 더 빠르게 반응
+	// 체력이 낮으면 즉시 도주
+	if (ShouldFleeFromCombat())
+	{
+		if (StateMachine)
+		{
+			StateMachine->ChangeState(ETerminidState::Flee);
+		}
+	}
+
+	// 도움 요청
+	if (bCanCallForHelp && !bHasCalledForHelp)
+	{
+		CallForHelp();
 	}
 }
