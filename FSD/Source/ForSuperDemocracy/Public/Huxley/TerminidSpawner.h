@@ -35,18 +35,15 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawn", meta = (ClampMin = "1", ClampMax = "50"))
 	int32 MaxActiveMonsters = 8;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawn", meta = (ClampMin = "500.0", ClampMax = "3000.0"))
-	float PlayerDetectionRange = 1500.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawn", meta = (ClampMin = "500.0", ClampMax = "30000.0"))
+	float PlayerDetectionRange = 8000.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawn")
 	bool bSpawnOnlyWhenPlayerNear = true;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawn")
 	bool bAutoStartSpawning = true;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawn", meta = (ClampMin = "100.0", ClampMax = "1000.0"))
-	float SpawnRadius = 300.0f;
-
+	
 	// Terminid 클래스 참조들
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Terminid Classes", meta = (AllowedClasses = "TerminidBase"))
 	TSubclassOf<ATerminidBase> ScavengerClass;

@@ -77,11 +77,11 @@ struct FORSUPERDEMOCRACY_API FTerminidStats
 	{
 		FTerminidStats Stats;
 		Stats.Health = 25.0f;
-		Stats.MoveSpeed = 585.0f; // 450 * 1.3 = 30% 증가
+		Stats.MoveSpeed = 800.0f;
 		Stats.AttackDamage = 15.0f;
 		Stats.AttackCooldown = 1.0f;
 		Stats.AttackRange = 100;
-		Stats.DetectionRange = 255; // 1020 / 4 - Maximum detection range for Scavenger (uint8 limit)
+		Stats.DetectionRange = 255; // 1020 / 4 
 		Stats.TerminidTypeID = static_cast<uint8>(ETerminidType::Scavenger);
 		return Stats;
 	}
@@ -90,7 +90,7 @@ struct FORSUPERDEMOCRACY_API FTerminidStats
 	{
 		FTerminidStats Stats;
 		Stats.Health = 120.0f;
-		Stats.MoveSpeed = 300.0f;
+		Stats.MoveSpeed = 600.0f;
 		Stats.AttackDamage = 40.0f;
 		Stats.AttackCooldown = 1.5f;
 		Stats.AttackRange = 120;
@@ -103,10 +103,10 @@ struct FORSUPERDEMOCRACY_API FTerminidStats
 	{
 		FTerminidStats Stats;
 		Stats.Health = 350.0f;
-		Stats.MoveSpeed = 200.0f;
-		Stats.AttackDamage = 70.0f;
+		Stats.MoveSpeed = 500.0f;
+		Stats.AttackDamage = 100.0f;
 		Stats.AttackCooldown = 2.5f;
-		Stats.AttackRange = 150;
+		Stats.AttackRange = 120;
 		Stats.DetectionRange = 250; // 1000 / 4
 		Stats.TerminidTypeID = static_cast<uint8>(ETerminidType::Charger);
 		return Stats;

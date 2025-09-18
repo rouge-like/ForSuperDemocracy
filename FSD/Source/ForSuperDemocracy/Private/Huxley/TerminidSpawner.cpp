@@ -21,10 +21,9 @@ ATerminidSpawner::ATerminidSpawner()
 	// 기본값 설정
 	SpawnInterval = 3.0f;
 	MaxActiveMonsters = 8;
-	PlayerDetectionRange = 1500.0f;
+	PlayerDetectionRange = 8000.0f;
 	bSpawnOnlyWhenPlayerNear = true;
 	bAutoStartSpawning = true;
-	SpawnRadius = 300.0f;
 
 	CurrentSpawnIndex = 0;
 	LastSpawnTime = 0.0f;
@@ -290,7 +289,7 @@ FVector ATerminidSpawner::GetRandomSpawnLocation() const
 	FVector SpawnerCenter = GetActorLocation();
 
 	// 지면에 정확히 위치하도록 Z값 조정
-	SpawnerCenter.Z += 50.0f; // 스포너 위쪽에서 시작
+	SpawnerCenter.Z -= 100.0f;
 
 	return SpawnerCenter;
 }
@@ -356,15 +355,7 @@ void ATerminidSpawner::UpdateSpawning(float DeltaTime)
 
 bool ATerminidSpawner::IsSpawnLocationValid(const FVector& Location) const
 {
-	// 기본적인 위치 유효성 검사
-	UWorld* World = GetWorld();
-	if (!World)
-	{
-		return false;
-	}
-
-	// 간단한 위치 확인 - NavMesh 체크는 나중에 추가
-
+	// 무조건 스폰 허용
 	return true;
 }
 
@@ -528,9 +519,6 @@ void ATerminidSpawner::DestroySpawner()
 	// 파괴 상태로 전환
 	bIsDestroyed = true;
 	CurrentHealth = 0.0f;
-
-	// 디버그 프린트: 스포너 파괴됨
-	UE_LOG(LogTemp, Error, TEXT("SPAWNER DESTROYED! Stopping all spawning and creating blocking mesh"));
 
 	// 스폰 중지
 	StopSpawning();
