@@ -39,7 +39,15 @@ EPlayerState UPlayerFSM::GetPlayerState()
 
 void UPlayerFSM::SetPlayerState(EPlayerState NewState)
 {
+	// 바꾸기 전 상태 저장
+	PreviousState = _State;
+	
 	_State = NewState;
+}
+
+EPlayerState UPlayerFSM::GetPreviousPlayerState()
+{
+	return PreviousState;
 }
 
 

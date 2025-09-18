@@ -42,6 +42,10 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	FRotator AimingLocation;
 
+	// Current weapon
+	UPROPERTY(BlueprintReadOnly)
+	int32 CurrentWeapon;
+
 public:
 	// Anim montage
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category=PlayerAnim)

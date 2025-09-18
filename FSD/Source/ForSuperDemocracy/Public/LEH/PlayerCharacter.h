@@ -27,9 +27,6 @@ public:
     // Called every frame
     virtual void Tick(float DeltaTime) override;
 
-	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
 public:
 	void OnConstruction(const FTransform& Transform) override;
 	// Components
@@ -39,8 +36,15 @@ public:
 	UPROPERTY(EditAnywhere)
 	class UCameraComponent* Camera;
 
+	// Rifle
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class UChildActorComponent* ChildActor;
+	// Grenade
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    class UChildActorComponent* ChildActor1;
+    // Staratagem
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    class UChildActorComponent* ChildActor2;
 
 	UPROPERTY(EditAnywhere)
 	class UPlayerFSM* FSMComp;
@@ -48,23 +52,46 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	class UWeaponComponent* WeaponComp;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	class UHealthComponent* HealthComp;
+
+protected:
+	// Equip Weapon
+	int32 CurrentWeaponIdx = 0;
+
+public:
+	FORCEINLINE const int32 GetCurrentWeaponIdx() {return CurrentWeaponIdx;}
+	FORCEINLINE void SetCurrentWeaponIdx(int32 NewIdx) {CurrentWeaponIdx = NewIdx;}
+	
+public:
+	// Damage
+	float DamageTime = 1.f;
+	FTimerHandle DamageTimerHandle;
+	
+	UFUNCTION()
+	void OnDamaged(float Damage, AActor* DamageCauser, AController* EventInstigator, TSubclassOf<UDamageType> DamageType);
+
+public:
+	UFUNCTION()
+	void OnDeath(AActor* Victim);
+	
 protected:
 	// FOV lerp
-	UPROPERTY(EditDefaultsOnly, Category=FOV)
+	UPROPERTY(EditDefaultsOnly, Category=FOVLerp)
 	float MaxFOV = 90.f;
 
-	UPROPERTY(EditDefaultsOnly, Category=FOV)
-	float MinFOV = 70.f;
+	UPROPERTY(EditDefaultsOnly, Category=FOVLerp)
+	float MinFOV = 40.f;
 
-	UPROPERTY(EditAnywhere, Category=FOV)
-	float LerpSpeed = 5.f;
+	UPROPERTY(EditAnywhere, Category=FOVLerp)
+	float LerpSpeed = 3.5f;
 	
 	bool bIsZooming = false;
 	
 	float ZoomStartFOV;
 	float ZoomTargetFOV;
 	
-	float CurrentLerpAlpha = 0.f;
+	float CurrentLerpAlpha1 = 0.f;
 
 public:
 	UPROPERTY(BlueprintAssignable)
@@ -78,6 +105,35 @@ public:
 
 	FRotator GetCameraAim();
 
+public:
+	// Camera Prone
+	UPROPERTY(EditDefaultsOnly, Category=CameraProne)
+	float MaxHeight = 0.f;
+
+	UPROPERTY(EditDefaultsOnly, Category=CameraProne)
+	float MinHeight = -100.f;
+
+	UPROPERTY(EditAnywhere, Category=CameraProne)
+	float CameraLerpSpeed = 1.5f;
+	
+	bool bIsCameraProning = false;
+	bool bEasingFlag = true;
+	
+	float StartZ;
+	float TargetZ;
+
+	float CurrentLerpAlpha2 = 0.f;
+	
+	void StartCameraProne(bool IsProning);
+	
+	float easeOutCubic(float x);
+	float easeInCubic(float x);
+
+public:
+	// Fire
+	UFUNCTION()
+	void OnWeaponFired(AWeaponBase* Weapon);
+	
 public:
     // Montage
     void PlayReloadMontage();
