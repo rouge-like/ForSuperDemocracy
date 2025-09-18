@@ -59,6 +59,8 @@ protected:
 	// Equip Weapon
 	int32 CurrentWeaponIdx = 0;
 
+	void ViewCurrentWeapon(bool Visibility);
+
 public:
 	FORCEINLINE const int32 GetCurrentWeaponIdx() {return CurrentWeaponIdx;}
 	FORCEINLINE void SetCurrentWeaponIdx(int32 NewIdx) {CurrentWeaponIdx = NewIdx;}
