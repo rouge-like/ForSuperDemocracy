@@ -144,8 +144,8 @@ public:
 	UStaticMesh* BlockingMesh;
 
 	// 파괴 관련 함수들
-	UFUNCTION(BlueprintCallable, Category = "Destruction")
-	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, class AActor* DamageCauser) override;
+	// UFUNCTION(BlueprintCallable, Category = "Destruction")
+	// virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, class AActor* DamageCauser) override;
 
 	UFUNCTION(BlueprintCallable, Category = "Destruction")
 	void DestroySpawner();
