@@ -12,6 +12,7 @@
 #include "OSC/MainHUD.h"
 #include "OSC/UI/MainUI.h"
 #include "OSC/UI/WeaponWidget.h"
+#include "LEH/PlayerCharacter.h"
 
 // 기본값 설정
 AWeaponBase::AWeaponBase()

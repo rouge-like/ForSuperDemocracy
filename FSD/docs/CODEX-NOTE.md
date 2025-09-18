@@ -27,7 +27,7 @@
 - `WeaponComponent`(UActorComponent): 소유자 입력 받아 발사/재장전 처리, 타이머 기반 발사, 장착/교체 관리.
 - 히트스캔 흐름: `GetMuzzleTransform` + `LineTraceSingleByChannel`, Hit 데이터로 이펙트/사운드/데미지 처리.
 - UI 연동: `WeaponComponent` 이벤트로 탄수/재장전 진행 HUD 바인딩.
-- 확장: 발사 방식(Hitscan/Projectile), 반동/스프레드 모델, SFX/VFX 브리지, 네트워크 RPC.
+- 확장: 발사 방식(Hitscan/Projectile), 반동/스프레드 모델, SFX/VFX 브리지.
 
 ## 1~2주 추가 아이디어(Helldivers 느낌 확장)
 - 간단 AI: `BehaviorTree`/`EQS` 추격/공격, AIController + NavMesh.
@@ -129,3 +129,142 @@
 - 수류탄 보유량 UI(`SetGrenade/InitWeapons`) 실제 데이터와 연결.
 - `ATerminidBase::BeginPlay()`에서 `Health` null 체크 보강(컴포넌트 미부착 크래시 방지).
 - HUD/GameMode 설정에서 `AMainHUD` 지정 상태 확인.
+
+---
+
+## 현황 분석 (2025-09-12 ~ 2025-09-15)
+
+### 요약
+- UI: 체력 UI(HUD) 실제 데미지 이벤트 연동 완료. `OnFired`/`WeaponFire` 델리게이트로 HUD 갱신 신뢰성 강화.
+- 무기/전투: 히트스캔에 더해 `ProjectileBase/ProjectileWeapon/Grenade` 경로 신설(투사체 계열 도입). 래그돌 적용 지점 추가.
+- 애니메이션: Fire/Reload 애님 및 경례 몽타주 연동 완료. 스캐빈저 걷기/공격 시퀀스 보강, AnimNotify로 데미지 트리거 처리.
+- AI/레벨: 스포너 충돌/배치 정리 및 암석/바위 콜리전 값 보정. 레벨(바위 아치 등) 배치 품질 향상.
+- 자산/구조: 대규모 경로 재정리(.gitignore 포함). 플레이어 망토 도입 및 콜리전/물리 설정 보정.
+
+### 통합 상태
+- HUD/체력:
+  - `UHealthWidget`가 데미지 이벤트와 연동되어 체력 표시 갱신됨.
+  - 무기 발사 이벤트(`OnFired`/`WeaponFire`)를 UI와 연결해 탄약/발사 상태 갱신 루틴 정착.
+- 무기 시스템:
+  - 히트스캔 ↔ 투사체 이원화. `ProjectileBase`를 통해 그레네이드/프로젝트타일 무기 계열 확장 준비 완료.
+  - 발사/재장전 애님(AM_Fire/AM_Reload)과 데이터(`OSC/Data/Rifle`) 연동 확인.
+- 애니메이션/캐릭터:
+  - 경례 애니메이션(몽타주) 도입 및 완료 처리.
+  - 스캐빈저 이동/공격 애니메이션 적용. 공격 타이밍은 AnimNotify 기반으로 데미지 처리.
+  - 플레이어 망토 추가 및 콜리전/물리 값 보정으로 클리핑 최소화.
+- 레벨/프롭/콜리전:
+  - 스포너 콜리전, 암석 콜리전, 바위 아치 배치 등 레벨 품질 개선 작업 반영.
+  - 대량 자산 경로 이동으로 레퍼런스 리다이렉터 정리 필요성 상존.
+- 설정/구성:
+  - `Default*.ini` 일부 업데이트 및 `.gitignore` 보강. 자산 경로 체계(FSD/ → ForSuperDemocracy/ 등) 정돈.
+
+### 리스크/주의
+- 자산 경로 대량 이동:
+  - UE 리다이렉터 정리(Fix Up Redirectors) 필요. 누락 시 레벨/블루프린트 참조 깨짐 가능.
+  - CI/빌드 스크립트에서 경로 변경 반영 여부 확인.
+- AnimNotify 데미지 처리:
+  - Notify는 트리거 신호만 사용하고, 실제 판정은 코드(Trace/Overlap)에서 1회만 수행하도록 가드. 멀티히트(프레임 중복) 방지 타이밍 검증 권장.
+- 투사체 데미지 흐름:
+  - `Any/Point/RadialDamage` 케이스 모두 `UHealthComponent`와 일관되게 연결되는지 점검.
+- 래그돌/물리:
+  - 프레임 안정성/퍼포먼스 영향 검토 필요(활성 개수 상한/시간 제한 등 가드레일 설정).
+- 망토(클로스/콜리전):
+  - 관통/떨림 현상 최소화 튜닝 지속 필요. 상태 전환(스프린트/ADS) 시 물리 값 전환 타이밍 점검.
+
+### 완료 체크(최근)
+- [완료] Health UI ↔ 데미지 이벤트 연동(2025-09-12)
+- [완료] Fire/Reload 애니메이션 연계(2025-09-12)
+- [완료] 경례 애니메이션/몽타주 도입(2025-09-12~14)
+- [완료] ProjectileBase/ProjectileWeapon/Grenade 도입(2025-09-12)
+- [완료] Ragdoll + Stratagem 시스템 스캐폴딩(코드/자원 반영)(2025-09-14)
+- [완료] Scavenger 애니메이션/AnimNotify 데미지 처리(2025-09-14)
+- [완료] 스포너/레벨 콜리전/배치 정리(2025-09-14)
+- [완료] 자산 경로 구조 재정리 및 `.gitignore` 업데이트(2025-09-15)
+- [완료] 플레이어 망토 추가 및 콜리전 보정(2025-09-14~15)
+
+### 후속 TODO (2025-09-15)
+- [레벨/자산] Redirectors 정리 실행 및 참조 검증(레벨/BP/애님BP 전수 확인).
+- [전투/투사체] RadialDamage/파편 데미지 HUD 반영, 팀/아군 피해 정책 단일화.
+- [Stratagem] 입력(시퀀스/쿨다운)/UI(요청/상태) 설계 및 구현.
+- [AI] Scavenger 데미지 Notify의 단일 틱 내 다중 히트 방지 로직 추가.
+- [물리] 래그돌/망토 퍼포먼스(프레임 타임/GC) 측정 및 튜닝, 재현성 테스트.
+- [UI] 무기/체력/UI 초기화 타이밍 단일화(Spawn/BeginPlay 시 1회 동기화 루틴).
+
+---
+
+## 주간 계획 (2025-09-15 주)
+
+### 우선순위(P0)
+- 플레이어: 엎드리기(Prone) 구현, 피격 이벤트 반응/연출 통합
+- 적: 종류 추가(최소 워리어/차저), 스폰/웨이브 연동
+- 임무: 기본 목표/상태 기계(Kill/Survive 중심) 및 UI
+- 플로우: 게임 시작 → 플레이 → 추출 → 결과 → 재시작 흐름
+
+### 팀 배분(3인)
+- Dev A — 플레이어: 엎드리기/피격/카메라/UI 연동
+- Dev B — 적/스폰: 워리어·차저 타입, 공격 판정, 스폰/웨이브
+- Dev C — 임무/플로우: 미션 컴포넌트·UI, 추출/결과, 게임 상태 전환
+
+### 공유 인터페이스(합의 필수)
+- 데미지 이벤트: `UHealthComponent::OnDamaged(AActor* Causer, float Damage, FVector HitLoc)`
+- 근접 판정: `bool ApplyMeleeHit(const FHitEvent& E)` — 한 번만 판정(쿨다운 윈도우 포함)
+- 미션 스펙: `struct FMissionSpec { EObjectiveType Type; int32 Target; float TimeLimit; }`
+- 브로드캐스트: `OnObjectiveUpdated(int32 Curr,int32 Target)`, `OnMissionCompleted()`, `OnMissionFailed()`
+- 스폰→미션: 적 사망 시 `UMissionComponent::NotifyKill(EEnemyType Type)` 호출
+
+### 구현 항목 상세
+- Dev A — 플레이어(엎드리기·피격)
+  - 입력/상태: `IA_Prone` 추가, `UPlayerFSM`에 `Prone` 상태(Enter/Update/Exit)
+  - 캡슐/카메라: HalfHeight 전환, 스프링암 높이/FOV 보정, ADS 제약 정책
+  - 애님: `ABP_PlayerAnimInstance` Prone 전이/Blend, Prone Idle/Move 연결
+  - 피격: `OnDamaged` 수신→ HitReact additive, 카메라 셰이크/히트 플래시, 무적 윈도우 상수화
+- Dev B — 적 타입/스폰
+  - 데이터: `UTerminidDataAsset`(HP/Speed/AtkRate/Damage/HitReact)
+  - 클래스: `ATerminidWarrior`, `ATerminidCharger` 파생(이동 패턴·근접 공격)
+  - 공격: AnimNotify→코드 판정 일원화(중복 히트 가드), `ApplyMeleeHit` 활용
+  - 스폰: `TerminidSpawner`에 타입/수량/쿨다운/웨이브 정의, 테스트 웨이브 구성
+- Dev C — 임무/플로우
+  - 미션: `UMissionComponent`/`AMissionManager`(GameMode 종속), 이벤트 브로드캐스트
+  - UI: `WBP_MainUI` 목표 패널(진척/타이머), 완료/실패 토스트
+  - 플로우: `AMainMode` 상태(PreGame→Playing→Extraction→Debrief→Menu)와 트리거
+  - 추출: `BP_ExtractionPoint` 배치→ 도달 시 Debrief→ 결과 화면 → 재시작
+
+### 권장 진행 순서(5일)
+- 월: Dev A 엎드리기 전이/카메라, Dev B 데이터자산/워리어 프로토, Dev C 미션 스펙/컴포넌트 골격
+- 화: Dev A 피격 루프, Dev B 차저/공격 판정 일원화, Dev C 목표 UI/타이머
+- 수: Dev B 스폰/웨이브 → 미션 Kill 연동, Dev C PreGame→Playing 전환
+- 목: Dev C 추출/결과/재시작, 통합 리허설 1차
+- 금: 폴리시 정리(팀피해/ADS·Prone 제약), 버그픽스/튜닝/최종 데모
+
+### 통합 체크포인트
+- 공통 시그니처 확정: `OnDamaged`, `NotifyKill`, `FMissionSpec` — D1 12:00까지
+- 리허설: D3 EOD(스폰→Kill 집계→UI), D4 EOD(전체 플로우)
+
+### 리스크/완화
+- 충돌/지형: Prone 캡슐 전환 시 경사/문턱 테스트 맵으로 검증
+- 중복 히트: 공격 ID/쿨다운 윈도우로 단일 판정 보장
+- 스코프: 이번 주는 `Kill/Survive` 중심, `Collect/Defend`는 훅만 노출
+
+### 브랜치/PR
+- 브랜치: `feat/player-prone-and-hit/devA`, `feat/enemy-types-and-spawn/devB`, `feat/mission-and-flow/devC`
+- 규칙: 작은 PR(≈300 라인 코드), 머지 전 `Save All` 및 `Fix Up Redirectors` 확인, 로컬 UBT 스모크 빌드
+
+## 작업 로그 (2025-09-16)
+- 미션 데이터/컴포넌트 골격 완성(싱글 기준): `UMissionData`(DataAsset) + `UMissionComponent`(ActorComponent).
+- 미션 타입/스펙 정리: `EMissionType { Kill, Destroy, ReachArea, Survive }`, `FMissionObjective { Type, Target, TimeLimit, FilterTag, TargetClass, AreaTag, Label }`.
+- 컴포넌트 핵심 로직 구현:
+  - `StartMission` → 첫 Objective 시작, 상태 초기화.
+  - `StartObjective` → 진행도/타이머 초기화, Survive/TimeLimit 1Hz 카운트다운.
+  - `TickTimer` → Survive 완료/제한시간 만료 시 실패 처리.
+  - `NotifyKill/NotifyDestroyed/NotifyAreaEntered` → 타입별 진행/완료, Destroy 중복 집계 가드.
+  - `CompleteObjective/FailObjective` → 다음 Objective 전환 또는 미션 완료/실패 브로드캐스트.
+- 이벤트 델리게이트 노출: `OnObjectiveChanged/Updated/Completed`, `OnMissionCompleted/Failed`, `OnTimerTick`(UI 연동용).
+- MainMode 연동: `UMissionComponent` UPROPERTY 보유, `BeginPlay()`에서 `StartMission()` 호출(블루프린트에서 `UMissionData` 지정, 이벤트 훅 BP 연결 중).
+
+## 일일 TODO (2025-09-17)
+- 미션 UI 구현(WBP_MainUI 내 Mission 패널): 제목(Label/Type), 진행도(`Curr/Target` + ProgressBar), 타이머(mm:ss), 상태 배지.
+- 델리게이트 바인딩: `OnObjectiveChanged/Updated/TimerTick/Completed/Failed` 수신 → 위젯 갱신/토스트 1회 표시.
+- 초기 동기화: UI 생성 직후 현재 Objective/진행도/타이머 값 즉시 반영(깜빡임 방지).
+- Survive 연동: 시작 시 웨이브 Start, 완료/실패 시 Stop(중복 호출 가드).
+- ReachArea 표시: 복귀 지점 월드 마커/스크린 핀(간단 버전) 추가.
+- 가드 케이스: Target<=0 즉시완료, 중복 이벤트 방지(둥지 1회 집계), 타이머 일시정지 정책 확인.

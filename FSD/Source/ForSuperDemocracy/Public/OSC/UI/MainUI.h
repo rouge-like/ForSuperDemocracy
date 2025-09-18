@@ -6,6 +6,7 @@
 #include "Blueprint/UserWidget.h"
 #include "MainUI.generated.h"
 
+class UMissionWidget;
 class UWeaponWidget;
 class UHealthWidget;
 /**
@@ -23,10 +24,14 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UHealthWidget> HealthWidget;
 
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UMissionWidget> MissionWidget;
 
 public:
 	UFUNCTION(BlueprintCallable)
 	UWeaponWidget* GetWeaponWidget(){ return WeaponWidget; }
 	UFUNCTION(BlueprintCallable)
 	UHealthWidget* GetHealthWidget(){ return HealthWidget; }
+	UFUNCTION(BlueprintCallable)
+	UMissionWidget* GetMissionWidget(){ return MissionWidget; }
 };
