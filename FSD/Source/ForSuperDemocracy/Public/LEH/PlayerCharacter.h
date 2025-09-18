@@ -55,6 +55,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	class UHealthComponent* HealthComp;
 
+protected:
+	// Equip Weapon
+	int32 CurrentWeaponIdx = 0;
+
+public:
+	FORCEINLINE const int32 GetCurrentWeaponIdx() {return CurrentWeaponIdx;}
+	FORCEINLINE void SetCurrentWeaponIdx(int32 NewIdx) {CurrentWeaponIdx = NewIdx;}
+	
 public:
 	// Damage
 	float DamageTime = 1.f;

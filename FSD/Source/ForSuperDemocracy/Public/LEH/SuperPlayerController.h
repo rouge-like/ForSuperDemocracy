@@ -118,17 +118,17 @@ public:
 	void Salute(const FInputActionValue& Value);
 
 public:
-	// Equip Weapon
+	// Rifle
 	UPROPERTY(EditDefaultsOnly, Category = Input)
 	class UInputAction* Weapon1Action;
 
 	void EquipRifle(const FInputActionValue& Value);
-
+	// Grenade
 	UPROPERTY(EditDefaultsOnly, Category = Input)
 	class UInputAction* Weapon2Action;
 	
 	void EquipGrenade(const FInputActionValue& Value);
-
+	// Stratagem
 	UPROPERTY(EditDefaultsOnly, Category = Input)
 	class UInputAction* Weapon3Action;
 	

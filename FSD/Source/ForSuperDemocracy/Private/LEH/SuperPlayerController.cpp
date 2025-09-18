@@ -298,15 +298,48 @@ void ASuperPlayerController::Salute(const FInputActionValue& Value)
 
 void ASuperPlayerController::EquipRifle(const FInputActionValue& Value)
 {
+	if (PlayerCharacter->GetCurrentWeaponIdx() == 0)
+	{
+		return;
+	}
+	
 	WeaponComp->Equip(0);
+
+	PlayerCharacter->SetCurrentWeaponIdx(0);
+	
+	PlayerCharacter->ChildActor->SetVisibility(true);
+	PlayerCharacter->ChildActor1->SetVisibility(false);
+	PlayerCharacter->ChildActor2->SetVisibility(false);
 }
 
 void ASuperPlayerController::EquipGrenade(const FInputActionValue& Value)
 {
+	if (PlayerCharacter->GetCurrentWeaponIdx() == 1)
+	{
+		return;
+	}
+	
 	WeaponComp->Equip(1);
+
+	PlayerCharacter->SetCurrentWeaponIdx(1);
+
+	PlayerCharacter->ChildActor->SetVisibility(false);
+	PlayerCharacter->ChildActor1->SetVisibility(true);
+	PlayerCharacter->ChildActor2->SetVisibility(false);
 }
 
 void ASuperPlayerController::EquipStratagem(const FInputActionValue& Value)
 {
+	if (PlayerCharacter->GetCurrentWeaponIdx() == 2)
+	{
+		return;
+	}
+	
 	WeaponComp->Equip(2);
+
+	PlayerCharacter->SetCurrentWeaponIdx(2);
+
+	PlayerCharacter->ChildActor->SetVisibility(false);
+	PlayerCharacter->ChildActor1->SetVisibility(false);
+	PlayerCharacter->ChildActor2->SetVisibility(true);
 }
