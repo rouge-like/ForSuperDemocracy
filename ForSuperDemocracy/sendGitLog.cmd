@@ -1,2 +1,0 @@
-@echo off
-cargo run --manifest-path "C:\Users\user\Documents\GitHub\codex\codex-rs\Cargo.toml" --bin codex "오늘 까지의 rouge-like/ForSuperDemocracy의 커밋 내역을 요약 및 정리해줘. 포맷은 디스코드 '슈퍼 민주주의' 서버의 '깃-관리' 채널을 참고해. 채널에 업로드 된 커밋 내역중 마지막 날짜 기준이후 부터 오늘까지의 내용을 정리해줘.  정리가 완료되면 정리된 내용을 '깃-관리' 채널에 올려줘, 내용이 길 경우 여러번에 걸쳐 나눠서 보내"

@@ -1,0 +1,391 @@
+#pragma once
+
+#include "CoreMinimal.h"
+#include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Components/CapsuleComponent.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Perception/AIPerceptionComponent.h"
+#include "Perception/AISenseConfig_Sight.h"
+#include "Engine/Engine.h"
+#include "TerminidTypes.h"
+#include "TerminidBase.generated.h"
+
+class UTerminidFSM;
+class ATerminidSpawner;
+
+UCLASS(Abstract, BlueprintType, Blueprintable)
+class FORSUPERDEMOCRACY_API ATerminidBase : public ACharacter
+{   
+    GENERATED_BODY()
+
+public:
+    ATerminidBase();
+
+protected:
+    virtual void BeginPlay() override;
+    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+public:
+    virtual void Tick(float DeltaTime) override;
+    virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+    // AI 및 FSM 컴포넌트들
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AI")
+    UTerminidFSM* StateMachine;
+
+    // 스탯 및 속성
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stats")
+    FTerminidStats BaseStats;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI")
+    ETerminidType TerminidType;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Spawner")
+    ATerminidSpawner* ParentSpawner;
+
+    // 타겟 및 감지
+    UPROPERTY(BlueprintReadOnly, Category = "AI")
+    AActor* CurrentTarget;
+
+    UPROPERTY(BlueprintReadOnly, Category = "AI")
+    FVector LastKnownTargetLocation;
+
+    UPROPERTY(BlueprintReadOnly, Category = "AI")
+    bool bHasTarget;
+
+    UPROPERTY(BlueprintReadOnly, Category = "AI")
+    float DistanceToTarget;
+
+    // 전투 관련 속성
+    UPROPERTY(BlueprintReadOnly, Category = "Combat")
+    float LastAttackTime;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Combat")
+    bool bCanAttack;
+
+    // 피격 관련 속성
+    UPROPERTY(BlueprintReadOnly, Category = "Combat")
+    float LastHurtTime;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat")
+    float HurtRecoveryTime;
+
+    // 체력 회복 관련 속성
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat")
+    float HealthRegenerationRate; // 초당 회복량
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat")
+    float HealthRegenerationDelay; // 피격 후 회복 시작까지의 지연 시간
+
+    UPROPERTY(BlueprintReadOnly, Category = "Combat")
+    float LastDamageTime; // 마지막 피격 시간
+
+    // 애니메이션 관련 속성
+    UPROPERTY(BlueprintReadOnly, Category = "Animation")
+    bool bIsSpawning;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Animation")
+    bool bIsPlayingAnimation;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Animation")
+    bool bIsPlayingAttackAnimation;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation")
+    float SpawnAnimationDuration;
+    
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation")
+    float AttackAnimationDuration;
+
+    // Burrow 관련 속성
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Burrow")
+    bool bStartInBurrow;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Burrow")
+    bool bIsBurrowed;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Burrow")
+    float BurrowDetectionRange;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Burrow")
+    float BurrowEmergeDuration;
+
+    // 초기화
+    UFUNCTION(BlueprintCallable, Category = "Terminid")
+    void InitializeTerminid(const FTerminidStats& Stats, ETerminidType Type);
+
+    UFUNCTION(BlueprintCallable, Category = "Terminid")
+    void SetParentSpawner(ATerminidSpawner* Spawner);
+
+    // 핵심 행동 함수들 - 파생 클래스에서 오버라이드
+    UFUNCTION(BlueprintImplementableEvent, Category = "Behavior")
+    void ExecuteIdleBehavior();
+
+    UFUNCTION(BlueprintImplementableEvent, Category = "Behavior")
+    void ExecutePatrolBehavior();
+
+    UFUNCTION(BlueprintImplementableEvent, Category = "Behavior")
+    void ExecuteChaseBehavior();
+
+    UFUNCTION(BlueprintImplementableEvent, Category = "Behavior")
+    void ExecuteAttackBehavior();
+
+    UFUNCTION(BlueprintImplementableEvent, Category = "Behavior")
+    void ExecuteHurtBehavior();
+
+    UFUNCTION(BlueprintImplementableEvent, Category = "Behavior")
+    void ExecuteSwarmBehavior();
+
+    UFUNCTION(BlueprintImplementableEvent, Category = "Behavior")
+    void ExecuteFleeBehavior();
+
+    UFUNCTION(BlueprintImplementableEvent, Category = "Behavior")
+    void ExecuteBurrowBehavior();
+
+    // 애니메이션 이벤트들 (Blueprint에서 구현)
+    UFUNCTION(BlueprintImplementableEvent, Category = "Animation")
+    void OnSpawnAnimationStart();
+
+    UFUNCTION(BlueprintImplementableEvent, Category = "Animation")
+    void OnSpawnAnimationComplete();
+
+    UFUNCTION(BlueprintImplementableEvent, Category = "Animation")
+    void OnIdleAnimation();
+
+    UFUNCTION(BlueprintImplementableEvent, Category = "Animation")
+    void OnMoveAnimation();
+
+    UFUNCTION(BlueprintImplementableEvent, Category = "Animation")
+    void OnAttackAnimation();
+
+    UFUNCTION(BlueprintImplementableEvent, Category = "Animation")
+    void OnDeathAnimation();
+
+    // 스폰 관련 함수들
+    UFUNCTION(BlueprintCallable, Category = "Spawning")
+    void StartSpawnSequence();
+
+    UFUNCTION(BlueprintCallable, Category = "Spawning")
+    void CompleteSpawnSequence();
+
+    UFUNCTION(BlueprintPure, Category = "Spawning")
+    bool IsSpawning() const { return bIsSpawning; }
+    
+    // 공격 애니메이션 관리
+    UFUNCTION(BlueprintCallable, Category = "Animation")
+    void StartAttackAnimation();
+    
+    UFUNCTION(BlueprintCallable, Category = "Animation")
+    void CompleteAttackAnimation();
+    
+    UFUNCTION(BlueprintPure, Category = "Animation")
+    bool IsPlayingAttackAnimation() const { return bIsPlayingAttackAnimation; }
+    
+    virtual void ProcessIdleBehavior(float DeltaTime);
+    virtual void ProcessPatrolBehavior(float DeltaTime);
+    virtual void ProcessChaseBehavior(float DeltaTime);
+    virtual void ProcessAttackBehavior(float DeltaTime);
+    virtual void ProcessHurtBehavior(float DeltaTime);
+    virtual void ProcessSwarmBehavior(float DeltaTime);
+    virtual void ProcessFleeBehavior(float DeltaTime);
+    virtual void ProcessDeathBehavior(float DeltaTime);
+    virtual void ProcessBurrowBehavior(float DeltaTime);
+
+    // 타겟 관리
+    UFUNCTION(BlueprintCallable, Category = "AI")
+    void SetCurrentTarget(AActor* NewTarget);
+
+    UFUNCTION(BlueprintCallable, Category = "AI")
+    void ClearTarget();
+
+    UFUNCTION(BlueprintPure, Category = "AI")
+    bool HasValidTarget() const;
+
+    UFUNCTION(BlueprintCallable, Category = "AI")
+    void UpdateTargetDistance();
+
+    UFUNCTION(BlueprintPure, Category = "AI")
+    bool IsTargetInRange(float Range) const;
+
+    UFUNCTION(BlueprintPure, Category = "AI")
+    bool IsTargetInAttackRange() const;
+
+    // 전투
+    UFUNCTION(BlueprintCallable, Category = "Combat")
+    virtual bool CanPerformAttack() const;
+
+    UFUNCTION(BlueprintCallable, Category = "Combat")
+    virtual void PerformAttack();
+
+    // Unreal Engine TakeDamage 오버라이드
+    UFUNCTION()
+    void OnDamaged(float Damage, AActor* DamageCauser, AController* EventInstigator, TSubclassOf<UDamageType> DamageType);
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Health")
+    class UHealthComponent* Health;
+
+    UFUNCTION(BlueprintImplementableEvent, Category = "Combat")
+    void OnDamageReceived(float DamageAmount, AActor* DamageSource);
+
+    // HealthComponent OnDeath 이벤트 핸들러
+    UFUNCTION()
+    void OnHealthComponentDeath(AActor* Victim);
+
+    // 피격 상태에서 복원하는 함수
+    UFUNCTION()
+    void RecoverFromHurt();
+
+    // Burrow 관련 함수들
+    UFUNCTION(BlueprintCallable, Category = "Burrow")
+    void StartBurrowState();
+
+    UFUNCTION(BlueprintCallable, Category = "Burrow")
+    void EmergeFromBurrow();
+
+    UFUNCTION(BlueprintPure, Category = "Burrow")
+    bool IsBurrowed() const { return bIsBurrowed; }
+
+    UFUNCTION(BlueprintCallable, Category = "Burrow")
+    void CheckBurrowDetection(float DeltaTime);
+
+    // 레그돌 및 충돌 관리
+    UFUNCTION(BlueprintCallable, Category = "Death")
+    void EnableRagdoll();
+
+    UFUNCTION(BlueprintCallable, Category = "Death")
+    void DisableCollisionWithPlayersAndTerminids();
+
+    // 이동 유틸리티
+    UFUNCTION(BlueprintCallable, Category = "Movement")
+    void MoveTowardsTarget(float DeltaTime);
+
+    UFUNCTION(BlueprintCallable, Category = "Movement")
+    void MoveTowardsLocation(const FVector& TargetLocation, float DeltaTime);
+
+    UFUNCTION(BlueprintCallable, Category = "Movement")
+    void StopMovement();
+
+    // 죽음 및 생명주기
+    UFUNCTION(BlueprintCallable, Category = "Lifecycle")
+    virtual void Die();
+
+    UFUNCTION(BlueprintImplementableEvent, Category = "Lifecycle")
+    void OnDeath();
+
+    // 플레이어 감지 (기본 FSM 방식)
+    UFUNCTION(BlueprintCallable, Category = "AI")
+    void UpdatePlayerDetection(float DeltaTime);
+    
+    UFUNCTION(BlueprintPure, Category = "AI")
+    APawn* FindNearestPlayer() const;
+    
+    UFUNCTION(BlueprintPure, Category = "AI")
+    bool IsPlayerInSight(APawn* Player) const;
+    
+    UFUNCTION(BlueprintPure, Category = "AI")
+    bool IsPlayerInDetectionRange(APawn* Player) const;
+
+    // 소음 기반 감지 시스템
+    UFUNCTION(BlueprintCallable, Category = "AI")
+    void OnNoiseHeard(FVector NoiseLocation, float NoiseRadius, AActor* NoiseInstigator);
+    
+    UFUNCTION(BlueprintCallable, Category = "AI")
+    void RegisterForNoiseEvents();
+    
+    UFUNCTION(BlueprintPure, Category = "AI")
+    bool IsNoiseInRange(FVector NoiseLocation, float NoiseRadius) const;
+
+    // 유틸리티 함수들 - HealthComponent 기반
+    UFUNCTION(BlueprintPure, Category = "Stats")
+    float GetCurrentHealth() const;
+
+    UFUNCTION(BlueprintPure, Category = "Stats")
+    float GetMaxHealth() const;
+
+    UFUNCTION(BlueprintPure, Category = "Stats")
+    float GetHealthPercent() const;
+
+    UFUNCTION(BlueprintPure, Category = "Stats")
+    bool IsAlive() const;
+
+    UFUNCTION(BlueprintPure, Category = "AI")
+    FORCEINLINE bool ShouldFlee() const { return GetHealthPercent() < 0.3f; }
+
+    UFUNCTION(BlueprintPure, Category = "Stats")
+    FORCEINLINE ETerminidType GetTerminidType() const { return TerminidType; }
+
+    UFUNCTION(BlueprintPure, Category = "AI")
+    FORCEINLINE AActor* GetCurrentTarget() const { return CurrentTarget; }
+
+    // 체력 회복 함수들
+    UFUNCTION(BlueprintCallable, Category = "Combat")
+    void StartHealthRegeneration();
+
+    UFUNCTION(BlueprintCallable, Category = "Combat")
+    void StopHealthRegeneration();
+
+    UFUNCTION(BlueprintCallable, Category = "Combat")
+    void ProcessHealthRegeneration(float DeltaTime);
+
+    // 단순한 사격 소리 감지 시스템 (Blueprint에서 호출)
+    UFUNCTION(BlueprintCallable, Category = "AI")
+    virtual void OnGunfireDetected(FVector FireLocation, float Range);
+
+    UFUNCTION(BlueprintPure, Category = "AI")
+    bool IsSoundInRange(FVector SoundLocation, float SoundRange) const;
+
+    // 시야 감지 관련 변수들
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI")
+    float SightAngle; // 시야각 (도 단위)
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI")
+    float SightRange; // 시야 범위
+
+    // 소음 감지 관련 변수들 (Blueprint에서 접근 가능)
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI")
+    float NoiseDetectionRange;
+
+    UPROPERTY(BlueprintReadOnly, Category = "AI")
+    FVector LastHeardNoiseLocation;
+
+    UPROPERTY(BlueprintReadOnly, Category = "AI")
+    float LastNoiseTime;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI")
+    float NoiseResponseDuration; // 소음 후 각성 상태 지속 시간
+
+    // 단순화된 소리 감지 범위
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI")
+    float SoundDetectionRange;
+
+protected:
+
+private:
+    void UpdateMovement(float DeltaTime);
+    void HandleDeath();
+    
+    // 플레이어 감지 관련
+    float LastPlayerDetectionTime;
+    static constexpr float PLAYER_DETECTION_INTERVAL = 0.5f; // 0.5초마다 감지 체크
+    
+    // 스폰 타이머 핸들
+    FTimerHandle SpawnTimerHandle;
+    
+    // 피격 회복 타이머 핸들
+    FTimerHandle HurtRecoveryTimerHandle;
+    
+    // Burrow 이머지 타이머 핸들
+    FTimerHandle BurrowEmergeTimerHandle;
+
+    // 공격 애니메이션 타이머 핸들
+    FTimerHandle AttackAnimationTimerHandle;
+
+    // 체력 회복 관련
+    bool bIsRegeneratingHealth;
+    FTimerHandle HealthRegenerationTimerHandle;
+
+#if WITH_EDITOR
+public:
+    virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+#endif
+};
