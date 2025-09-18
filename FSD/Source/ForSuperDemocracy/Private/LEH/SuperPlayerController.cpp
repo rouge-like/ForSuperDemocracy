@@ -30,7 +30,7 @@ void ASuperPlayerController::BeginPlay()
 	}
 
 	// Get owning player FSM
-	FSM = GetPawn()->FindComponentByClass<UPlayerFSM>();
+	PlayerFSMComp = GetPawn()->FindComponentByClass<UPlayerFSM>();
 
 	// Get owning player weapon component
 	WeaponComp = GetPawn()->FindComponentByClass<UWeaponComponent>();
@@ -70,16 +70,12 @@ void ASuperPlayerController::SetupInputComponent()
 		// Reload
 		EnhancedInput->BindAction(ReloadAction, ETriggerEvent::Started, this, &ASuperPlayerController::Reload);
 
-		// Prone
-		EnhancedInput->BindAction(ProneAction, ETriggerEvent::Started, this, &ASuperPlayerController::Prone);
+		// Dive
+		EnhancedInput->BindAction(DiveAction, ETriggerEvent::Started, this, &ASuperPlayerController::Dive);
 
 		// Salute
 		EnhancedInput->BindAction(SaluteAction, ETriggerEvent::Started, this, &ASuperPlayerController::Salute);
-
-		// Equip weapon
-		EnhancedInput->BindAction(Weapon1Action, ETriggerEvent::Triggered, this, &ASuperPlayerController::EquipRifle);
-		EnhancedInput->BindAction(Weapon2Action, ETriggerEvent::Triggered, this, &ASuperPlayerController::EquipGrenade);
-		EnhancedInput->BindAction(Weapon3Action, ETriggerEvent::Triggered, this, &ASuperPlayerController::EquipStratagem);
+		
 	}
 }
 
@@ -104,22 +100,18 @@ void ASuperPlayerController::Move(const FInputActionValue& Value)
 
 void ASuperPlayerController::MoveStart(const FInputActionValue& Value)
 {
-	if (FSM->GetPlayerState() == EPlayerState::Prone)
+	if (IsValid(PlayerFSMComp))
 	{
-		return;
+		PlayerFSMComp->SetPlayerState(EPlayerState::Move);
 	}
-	
-	FSM->SetPlayerState(EPlayerState::Move);
 }
 
 void ASuperPlayerController::MoveEnd(const FInputActionValue& Value)
 {
-	if (FSM->GetPlayerState() == EPlayerState::Prone)
+	if (IsValid(PlayerFSMComp))
 	{
-		return;
+		PlayerFSMComp->SetPlayerState(EPlayerState::Idle);
 	}
-	
-	FSM->SetPlayerState(EPlayerState::Idle);
 }
 
 void ASuperPlayerController::Look(const FInputActionValue& Value)
@@ -132,7 +124,7 @@ void ASuperPlayerController::Look(const FInputActionValue& Value)
 
 void ASuperPlayerController::SprintStart(const FInputActionValue& Value)
 {
-	if (bIsAiming || bIsReloading || FSM->GetPlayerState() == EPlayerState::Prone)
+	if (bIsAiming || bIsReloading)
 	{
 		return;
 	}
@@ -142,7 +134,7 @@ void ASuperPlayerController::SprintStart(const FInputActionValue& Value)
 
 void ASuperPlayerController::SprintEnd(const FInputActionValue& Value)
 {
-	if (bIsAiming || bIsReloading || FSM->GetPlayerState() == EPlayerState::Prone)
+	if (bIsAiming)
 	{
 		return;
 	}
@@ -156,19 +148,11 @@ void ASuperPlayerController::AimingStart(const FInputActionValue& Value)
 	{
 		return;
 	}
-
-	// 엎드리기 중이면 움직일 수 없음
-	if (FSM->GetPlayerState() == EPlayerState::Prone)
-	{
-		//PlayerCharacter->GetCharacterMovement()->SetMovementMode(MOVE_None);
-	}
 	
 	bIsAiming = true;
 	PlayerCharacter->bIsPlayerAiming = true;
-
-	PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed *= 0.5f;
-
-	
+	PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed = AimingSpeed;
+		
 	WeaponComp->StartAiming();
 		
 	// Actor rotation
@@ -183,23 +167,14 @@ void ASuperPlayerController::AimingStart(const FInputActionValue& Value)
 
 void ASuperPlayerController::AimingEnd(const FInputActionValue& Value)
 {
-	if (!bIsAiming)
-	{
-		return;
-	}
-	
-	if (FSM->GetPlayerState() == EPlayerState::Prone)
-	{
-		PlayerCharacter->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
-	}
-	else
-	{
-		
-	}
-	
+	//if (bIsReloading || !bIsAiming)
+	//{
+	//	return;
+	//}
+
 	bIsAiming = false;
 	PlayerCharacter->bIsPlayerAiming = false;
-	PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed *= 2.f;
+	PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 		
 	WeaponComp->StopAiming();
 
@@ -225,7 +200,7 @@ void ASuperPlayerController::FireStart(const FInputActionValue& Value)
 	{
 		if (IsValid(WeaponComp))
 		{
-			//PlayerCharacter->PlayFireMontage();
+			PlayerCharacter->PlayFireMontage();
 			WeaponComp->StartFire();
 		}
 	}
@@ -241,12 +216,6 @@ void ASuperPlayerController::FireEnd(const FInputActionValue& Value)
 
 void ASuperPlayerController::Reload(const FInputActionValue& Value)
 {
-	// salute 중이었으면 다시 손에 무기 들려주기
-	if (FSM->GetPreviousPlayerState() == EPlayerState::Salute)
-	{
-		PlayerCharacter->StopSaluteMontage();
-	}
-	
 	if (!bIsReloading)
 	{
 		bIsReloading = true;
@@ -266,80 +235,14 @@ void ASuperPlayerController::Reload(const FInputActionValue& Value)
 	}
 }
 
-void ASuperPlayerController::Prone(const FInputActionValue& Value)
+void ASuperPlayerController::Dive(const FInputActionValue& Value)
 {
-	if (FSM->GetPlayerState() != EPlayerState::Prone)
-	{
-		FSM->SetPlayerState(EPlayerState::Prone);
-		
-		PlayerCharacter->StartCameraProne(true);
-		PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed = CrawlSpeed;
-	}
-	else
-	{
-		FTimerHandle TimerHandle;
-		GetWorldTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda([&]
-		{
-			float CurrentSpeed = PlayerCharacter->GetCharacterMovement()->Velocity.Length();
-			FSM->SetPlayerState(CurrentSpeed > 0 ? EPlayerState::Move : EPlayerState::Idle);
-
-		}), 0.11f, false);
-		
-		PlayerCharacter->StartCameraProne(false);
-		PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
-	}
+	PlayerFSMComp->SetPlayerState(EPlayerState::Prone);
+	AimingStart(0);
 }
 
 void ASuperPlayerController::Salute(const FInputActionValue& Value)
 {
-	FSM->SetPlayerState(EPlayerState::Salute);
+	PlayerFSMComp->SetPlayerState(EPlayerState::Salute);
 	PlayerCharacter->PlaySaluteMontage();
-}
-
-void ASuperPlayerController::EquipRifle(const FInputActionValue& Value)
-{
-	if (PlayerCharacter->GetCurrentWeaponIdx() == 0)
-	{
-		return;
-	}
-	
-	WeaponComp->Equip(0);
-
-	PlayerCharacter->SetCurrentWeaponIdx(0);
-	
-	PlayerCharacter->ChildActor->SetVisibility(true);
-	PlayerCharacter->ChildActor1->SetVisibility(false);
-	PlayerCharacter->ChildActor2->SetVisibility(false);
-}
-
-void ASuperPlayerController::EquipGrenade(const FInputActionValue& Value)
-{
-	if (PlayerCharacter->GetCurrentWeaponIdx() == 1)
-	{
-		return;
-	}
-	
-	WeaponComp->Equip(1);
-
-	PlayerCharacter->SetCurrentWeaponIdx(1);
-
-	PlayerCharacter->ChildActor->SetVisibility(false);
-	PlayerCharacter->ChildActor1->SetVisibility(true);
-	PlayerCharacter->ChildActor2->SetVisibility(false);
-}
-
-void ASuperPlayerController::EquipStratagem(const FInputActionValue& Value)
-{
-	if (PlayerCharacter->GetCurrentWeaponIdx() == 2)
-	{
-		return;
-	}
-	
-	WeaponComp->Equip(2);
-
-	PlayerCharacter->SetCurrentWeaponIdx(2);
-
-	PlayerCharacter->ChildActor->SetVisibility(false);
-	PlayerCharacter->ChildActor1->SetVisibility(false);
-	PlayerCharacter->ChildActor2->SetVisibility(true);
 }
