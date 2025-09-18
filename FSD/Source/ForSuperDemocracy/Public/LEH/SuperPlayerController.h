@@ -22,7 +22,7 @@ public:
 
 public:
 	class APlayerCharacter* PlayerCharacter;
-	class UPlayerFSM* PlayerFSMComp;
+	class UPlayerFSM* FSM;
 	class UWeaponComponent* WeaponComp;
 	
 protected:
@@ -102,15 +102,36 @@ public:
 	
 	void Reload(const FInputActionValue& Value);
 	
-	// Dive
+	// Prone
 	UPROPERTY(EditDefaultsOnly, Category = Input)
-    class UInputAction* DiveAction;
-	
-	void Dive(const FInputActionValue& Value);
+    class UInputAction* ProneAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Speed)
+	float CrawlSpeed = 200.f;
+
+	void Prone(const FInputActionValue& Value);
 
 	// Salute
 	UPROPERTY(EditDefaultsOnly, Category = Input)
 	class UInputAction* SaluteAction;
 	
 	void Salute(const FInputActionValue& Value);
+
+public:
+	// Rifle
+	UPROPERTY(EditDefaultsOnly, Category = Input)
+	class UInputAction* Weapon1Action;
+
+	void EquipRifle(const FInputActionValue& Value);
+	// Grenade
+	UPROPERTY(EditDefaultsOnly, Category = Input)
+	class UInputAction* Weapon2Action;
+	
+	void EquipGrenade(const FInputActionValue& Value);
+	// Stratagem
+	UPROPERTY(EditDefaultsOnly, Category = Input)
+	class UInputAction* Weapon3Action;
+	
+	void EquipStratagem(const FInputActionValue& Value);
+	
 };

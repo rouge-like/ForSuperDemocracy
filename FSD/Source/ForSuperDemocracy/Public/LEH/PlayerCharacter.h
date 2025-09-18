@@ -7,7 +7,6 @@
 
 #include "PlayerCharacter.generated.h"
 
-class AWeaponBase;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnZoomInCompleted);
 
 UCLASS()
@@ -23,9 +22,9 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:
-    // Called every frame
-    virtual void Tick(float DeltaTime) override;
+public:	
+	// Called every frame
+	virtual void Tick(float DeltaTime) override;
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -79,26 +78,11 @@ public:
 	FRotator GetCameraAim();
 
 public:
-    // Montage
-    void PlayReloadMontage();
-    void PlayFireMontage();
-    void PlaySaluteMontage();
-    void StopSaluteMontage();
-    
-    bool bIsPlayerSalute = false;
-
-public:
-    // Camera recoil (kickback)
-    UFUNCTION(BlueprintCallable, Category=Recoil)
-    void ApplyCameraKick(AWeaponBase* Weapon);
-
-protected:
-    // SpringArm 원래 길이 보관 및 킥백 복구 속도
-    UPROPERTY(EditDefaultsOnly, Category=Recoil)
-    float CameraKickReturnSpeed = 120.f; // cm/sec
-
-    UPROPERTY(VisibleAnywhere, Category=Recoil)
-    float CurrentCameraKick = 0.f; // 누적 킥백(cm)
-
-    float DefaultArmLength = 0.f; // BeginPlay에서 초기화
+	// Montage
+	void PlayReloadMontage();
+	void PlayFireMontage();
+	void PlaySaluteMontage();
+	void StopSaluteMontage();
+	
+	bool bIsPlayerSalute = false;
 };
