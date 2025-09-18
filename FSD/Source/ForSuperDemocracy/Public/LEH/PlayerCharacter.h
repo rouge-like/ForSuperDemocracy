@@ -36,8 +36,15 @@ public:
 	UPROPERTY(EditAnywhere)
 	class UCameraComponent* Camera;
 
+	// Rifle
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class UChildActorComponent* ChildActor;
+	// Grenade
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    class UChildActorComponent* ChildActor1;
+    // Staratagem
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    class UChildActorComponent* ChildActor2;
 
 	UPROPERTY(EditAnywhere)
 	class UPlayerFSM* FSMComp;

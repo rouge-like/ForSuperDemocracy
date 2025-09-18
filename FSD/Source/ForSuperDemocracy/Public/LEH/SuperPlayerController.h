@@ -116,4 +116,22 @@ public:
 	class UInputAction* SaluteAction;
 	
 	void Salute(const FInputActionValue& Value);
+
+public:
+	// Equip Weapon
+	UPROPERTY(EditDefaultsOnly, Category = Input)
+	class UInputAction* Weapon1Action;
+
+	void EquipRifle(const FInputActionValue& Value);
+
+	UPROPERTY(EditDefaultsOnly, Category = Input)
+	class UInputAction* Weapon2Action;
+	
+	void EquipGrenade(const FInputActionValue& Value);
+
+	UPROPERTY(EditDefaultsOnly, Category = Input)
+	class UInputAction* Weapon3Action;
+	
+	void EquipStratagem(const FInputActionValue& Value);
+	
 };

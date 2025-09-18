@@ -75,7 +75,11 @@ void ASuperPlayerController::SetupInputComponent()
 
 		// Salute
 		EnhancedInput->BindAction(SaluteAction, ETriggerEvent::Started, this, &ASuperPlayerController::Salute);
-		
+
+		// Equip weapon
+		EnhancedInput->BindAction(Weapon1Action, ETriggerEvent::Triggered, this, &ASuperPlayerController::EquipRifle);
+		EnhancedInput->BindAction(Weapon2Action, ETriggerEvent::Triggered, this, &ASuperPlayerController::EquipGrenade);
+		EnhancedInput->BindAction(Weapon3Action, ETriggerEvent::Triggered, this, &ASuperPlayerController::EquipStratagem);
 	}
 }
 
@@ -290,4 +294,19 @@ void ASuperPlayerController::Salute(const FInputActionValue& Value)
 {
 	FSM->SetPlayerState(EPlayerState::Salute);
 	PlayerCharacter->PlaySaluteMontage();
+}
+
+void ASuperPlayerController::EquipRifle(const FInputActionValue& Value)
+{
+	WeaponComp->Equip(0);
+}
+
+void ASuperPlayerController::EquipGrenade(const FInputActionValue& Value)
+{
+	WeaponComp->Equip(1);
+}
+
+void ASuperPlayerController::EquipStratagem(const FInputActionValue& Value)
+{
+	WeaponComp->Equip(2);
 }

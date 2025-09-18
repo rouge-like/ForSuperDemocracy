@@ -30,6 +30,12 @@ APlayerCharacter::APlayerCharacter()
 	
 	ChildActor = CreateDefaultSubobject<UChildActorComponent>(TEXT("ChildActor"));
 	ChildActor->SetupAttachment(GetMesh());
+
+	ChildActor1 = CreateDefaultSubobject<UChildActorComponent>(TEXT("ChildActor1"));
+	ChildActor1->SetupAttachment(GetMesh());
+
+	ChildActor2 = CreateDefaultSubobject<UChildActorComponent>(TEXT("ChildActor2"));
+	ChildActor2->SetupAttachment(GetMesh());
 	
 	FSMComp = CreateDefaultSubobject<UPlayerFSM>(TEXT("FSMComponent"));
 	WeaponComp = CreateDefaultSubobject<UWeaponComponent>(TEXT("WeaponComponent"));
@@ -121,7 +127,8 @@ void APlayerCharacter::Tick(float DeltaTime)
 void APlayerCharacter::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
-	
+
+	// Rifle settings
 	FAttachmentTransformRules AttachRules(EAttachmentRule::SnapToTarget, true);
 	ChildActor->AttachToComponent(GetMesh(), AttachRules, FName("hand_r_socket"));
 	ChildActor->CreateChildActor();
@@ -129,6 +136,12 @@ void APlayerCharacter::OnConstruction(const FTransform& Transform)
 	ChildActor->GetChildActor()->SetInstigator(this);
 	ChildActor->SetRelativeLocation(FVector(-0.5f, 8.5f, -1.0f));
 	ChildActor->SetRelativeRotation(FRotator(0, 0, 0));
+
+	// Grenade settings
+	ChildActor1->AttachToComponent(GetMesh(), AttachRules, FName("hand_r_socket"));
+
+	// Staratagem settings
+	ChildActor2->AttachToComponent(GetMesh(), AttachRules, FName("hand_r_socket"));
 }
 
 void APlayerCharacter::OnDamaged(float Damage, AActor* DamageCauser, AController* EventInstigator,
