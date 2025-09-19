@@ -48,6 +48,9 @@ APlayerCharacter::APlayerCharacter()
 	GetMesh()->SetRelativeLocation(FVector(0.000000,0.000000,-83.103748));
 	GetMesh()->SetRelativeRotation(FRotator(0.000000,-89.999999,0.000000));
 	
+	// Default weapon settings
+	ViewCurrentWeapon(true);
+	
 }
 
 // Called when the game starts or when spawned
@@ -172,8 +175,24 @@ void APlayerCharacter::OnConstruction(const FTransform& Transform)
 	ChildActor2->AttachToComponent(GetMesh(), AttachRules, FName("hand_r_socket"));
 }
 
+void APlayerCharacter::ViewCurrentWeapon(bool Visibility)
+{
+	switch (CurrentWeaponIdx)
+	{
+		case 0:
+			ChildActor->SetVisibility(Visibility);
+			break;
+		case 1:
+			ChildActor1->SetVisibility(Visibility);
+			break;
+		case 2:
+			ChildActor2->SetVisibility(Visibility);
+			break;
+	}
+}
+
 void APlayerCharacter::OnDamaged(float Damage, AActor* DamageCauser, AController* EventInstigator,
-	TSubclassOf<UDamageType> DamageType)
+                                 TSubclassOf<UDamageType> DamageType)
 {
 	// 뭘 넣어야해?
 	// 데미지 받았을 때 뭘 할거야?
@@ -276,7 +295,28 @@ float APlayerCharacter::easeInCubic(float x)
 
 void APlayerCharacter::OnWeaponFired(AWeaponBase* Weapon)
 {
-	PlayFireMontage();
+	if (CurrentWeaponIdx == 0)
+	{
+		PlayFireMontage();	
+	}
+	else
+	{
+		// 수류탄, 스트라타잼 던지기
+		if (!bStartThrowAim)
+		{
+			return;
+		}
+		
+		PlayThrowMontage();
+		bStartThrowAim = false;
+		
+		GetWorldTimerManager().SetTimer(ThrowAimTimerHandle, FTimerDelegate::CreateLambda([&]
+		{
+			bStartThrowAim = true;
+		
+		}), 1.f, false);
+	}
+	
 }
 
 void APlayerCharacter::PlayReloadMontage()
@@ -316,14 +356,14 @@ void APlayerCharacter::PlaySaluteMontage()
 	{
 		bIsPlayerSalute = true;
 		
-		ChildActor->SetVisibility(false);
+		ViewCurrentWeapon(false);
 		anim->PlaySaluteAnimation();
 	}
 }
 
 void APlayerCharacter::StopSaluteMontage()
 {
-	ChildActor->SetVisibility(true);
+	ViewCurrentWeapon(true);
 	
 	auto anim = Cast<UPlayerAnimInstance>(GetMesh()->GetAnimInstance());
 	if (anim)
@@ -332,6 +372,21 @@ void APlayerCharacter::StopSaluteMontage()
 
 		anim->StopCurrentAnimation();
 	}
+}
+
+void APlayerCharacter::PlayThrowMontage()
+{
+	auto anim = Cast<UPlayerAnimInstance>(GetMesh()->GetAnimInstance());
+	if (anim)
+	{
+		anim->PlayThrowAnimation();
+	}
+}
+
+void APlayerCharacter::StopThrowMontage()
+{
+	GetWorldTimerManager().ClearTimer(ThrowAimTimerHandle);
+	bStartThrowAim = true;
 }
 
 

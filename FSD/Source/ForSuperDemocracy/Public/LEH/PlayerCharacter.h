@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "OSC/Weapon/WeaponBase.h"
 
 #include "PlayerCharacter.generated.h"
 
@@ -23,9 +24,9 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:
-    // Called every frame
-    virtual void Tick(float DeltaTime) override;
+public:	
+	// Called every frame
+	virtual void Tick(float DeltaTime) override;
 
 public:
 	void OnConstruction(const FTransform& Transform) override;
@@ -58,6 +59,8 @@ public:
 protected:
 	// Equip Weapon
 	int32 CurrentWeaponIdx = 0;
+
+	void ViewCurrentWeapon(bool Visibility);
 
 public:
 	FORCEINLINE const int32 GetCurrentWeaponIdx() {return CurrentWeaponIdx;}
@@ -133,17 +136,9 @@ public:
 	// Fire
 	UFUNCTION()
 	void OnWeaponFired(AWeaponBase* Weapon);
-	
-public:
-    // Montage
-    void PlayReloadMontage();
-    void PlayFireMontage();
-    void PlaySaluteMontage();
-    void StopSaluteMontage();
-    
-    bool bIsPlayerSalute = false;
 
-public:
+
+
     // Camera recoil (kickback)
     UFUNCTION(BlueprintCallable, Category=Recoil)
     void ApplyCameraKick(AWeaponBase* Weapon);
@@ -157,4 +152,19 @@ protected:
     float CurrentCameraKick = 0.f; // 누적 킥백(cm)
 
     float DefaultArmLength = 0.f; // BeginPlay에서 초기화
+public:
+	// Montage
+	void PlayReloadMontage();
+	void PlayFireMontage();
+
+	bool bIsPlayerSalute = false;
+	
+	void PlaySaluteMontage();
+	void StopSaluteMontage();
+
+	FTimerHandle ThrowAimTimerHandle;
+	bool bStartThrowAim = true;
+	
+	void PlayThrowMontage();
+	void StopThrowMontage();
 };

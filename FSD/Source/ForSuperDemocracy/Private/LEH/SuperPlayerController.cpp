@@ -305,6 +305,8 @@ void ASuperPlayerController::EquipRifle(const FInputActionValue& Value)
 	
 	WeaponComp->Equip(0);
 
+	// 투척물 던지던 중이었으면 타이머 리셋
+	//PlayerCharacter->StopThrowMontage();
 	PlayerCharacter->SetCurrentWeaponIdx(0);
 	
 	PlayerCharacter->ChildActor->SetVisibility(true);
