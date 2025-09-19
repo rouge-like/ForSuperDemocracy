@@ -90,7 +90,7 @@ protected:
 
     // Ragdoll impulse tuning: impulse strength per 1 damage
     UPROPERTY(EditDefaultsOnly, Category="Health|Ragdoll", meta=(ClampMin="0"))
-    float ImpulsePerDamage = 50.f;
+    float ImpulsePerDamage = 10.f;
 
     // Time before exiting simple ragdoll
     UPROPERTY(EditDefaultsOnly, Category="Health|Ragdoll", meta=(ClampMin="0"))
