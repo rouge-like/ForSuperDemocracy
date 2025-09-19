@@ -28,6 +28,12 @@ UPlayerAnimInstance::UPlayerAnimInstance()
 	{
 		SaluteMontage = SaluteTemp.Object;
 	}
+
+	ConstructorHelpers::FObjectFinder<UAnimMontage> ThrowTemp(TEXT("/Script/Engine.AnimMontage'/Game/LEH/Animations/AM_Throw.AM_Throw'"));
+	if (SaluteTemp.Succeeded())
+	{
+		ThrowMontage = ThrowTemp.Object;
+	}
 }
 
 void UPlayerAnimInstance::NativeInitializeAnimation()
@@ -68,6 +74,9 @@ void UPlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 
 		// Current weapon
 		CurrentWeapon = PlayerCharacter->GetCurrentWeaponIdx();
+
+		// 던질 준비 애니메이션
+		bStartThrowAim = PlayerCharacter->bStartThrowAim;
 	}
 }
 
@@ -94,4 +103,9 @@ void UPlayerAnimInstance::StopCurrentAnimation()
 	{
 		Montage_Stop(0.25, CurrentMontage);
 	}
+}
+
+void UPlayerAnimInstance::PlayThrowAnimation()
+{
+	Montage_Play(ThrowMontage);
 }

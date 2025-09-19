@@ -46,6 +46,10 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	int32 CurrentWeapon;
 
+	// 던질 준비 애니메이션
+	UPROPERTY(BlueprintReadOnly)
+	bool bStartThrowAim;
+
 public:
 	// Anim montage
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category=PlayerAnim)
@@ -63,4 +67,9 @@ public:
 
 	void PlaySaluteAnimation();
 	void StopCurrentAnimation();
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category=PlayerAnim)
+	class UAnimMontage* ThrowMontage;
+	
+	void PlayThrowAnimation();
 };
