@@ -158,10 +158,10 @@ void ASuperPlayerController::AimingStart(const FInputActionValue& Value)
 	}
 
 	// 엎드리기 중이면 움직일 수 없음
-	if (FSM->GetPlayerState() == EPlayerState::Prone)
-	{
-		//PlayerCharacter->GetCharacterMovement()->SetMovementMode(MOVE_None);
-	}
+	//if (FSM->GetPlayerState() == EPlayerState::Prone)
+	//{
+	//	PlayerCharacter->GetCharacterMovement()->SetMovementMode(MOVE_None);
+	//}
 	
 	bIsAiming = true;
 	PlayerCharacter->bIsPlayerAiming = true;
@@ -188,14 +188,7 @@ void ASuperPlayerController::AimingEnd(const FInputActionValue& Value)
 		return;
 	}
 	
-	if (FSM->GetPlayerState() == EPlayerState::Prone)
-	{
-		PlayerCharacter->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
-	}
-	else
-	{
-		
-	}
+	
 	
 	bIsAiming = false;
 	PlayerCharacter->bIsPlayerAiming = false;

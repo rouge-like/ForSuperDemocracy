@@ -203,12 +203,16 @@ void APlayerCharacter::OnDamaged(float Damage, AActor* DamageCauser, AController
 	}
 	
 	FSMComp->SetPlayerState(EPlayerState::Damage);
+
+	UE_LOG(LogTemp, Warning, TEXT("DamageStart"));
 	
 	GetWorldTimerManager().SetTimer(DamageTimerHandle, FTimerDelegate::CreateLambda([&]
 	{
-		FSMComp->SetPlayerState(FSMComp->GetPreviousPlayerState());
+		FSMComp->SetPlayerState(EPlayerState::Move);
+		UE_LOG(LogTemp, Warning, TEXT("DamageEnd"));
+		// FSMComp->GetPreviousPlayerState() 이거 문제있는듯
 		
-	}), DamageTime, false);
+	}), 1.f, false);
 }
 
 void APlayerCharacter::OnDeath(AActor* Victim)

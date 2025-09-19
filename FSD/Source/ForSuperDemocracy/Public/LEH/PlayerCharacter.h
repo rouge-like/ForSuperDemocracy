@@ -68,7 +68,6 @@ public:
 	
 public:
 	// Damage
-	float DamageTime = 1.f;
 	FTimerHandle DamageTimerHandle;
 	
 	UFUNCTION()
