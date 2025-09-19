@@ -148,7 +148,7 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Health")
 	class UHealthComponent* Health;
 
-	// 파괴 관련 함수들 - TakeDamage 오버라이드로 폭발 데미지만 허용
+	//파괴 관련 함수들 - TakeDamage 오버라이드로 폭발 데미지만 허용
 	UFUNCTION(BlueprintCallable, Category = "Destruction")
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, class AActor* DamageCauser) override;
 

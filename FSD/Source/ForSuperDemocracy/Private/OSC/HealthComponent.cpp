@@ -206,8 +206,13 @@ void UHealthComponent::UpdateCapsuleFollowRagdoll(float /*DeltaTime*/)
         return;
     }
 
-    const FVector Pelvis = Mesh->GetBoneLocation(RagdollPelvisBoneName, EBoneSpaces::WorldSpace);
+    FVector Pelvis = Mesh->GetBoneLocation(RagdollPelvisBoneName, EBoneSpaces::WorldSpace);
     const float HalfHeight = Capsule->GetUnscaledCapsuleHalfHeight();
+    if (Pelvis.IsNearlyZero())
+    {
+        Pelvis = Mesh->GetSocketLocation(RagdollPelvisBoneName);
+        Pelvis.Z += HalfHeight + 0.5f;
+    }
     FVector Target = Pelvis;
     Target.Z -= HalfHeight;
     Target.Z += RagdollCapsuleFollowZOffset;
@@ -266,8 +271,13 @@ void UHealthComponent::RecoverFromRagdoll()
         if (Capsule)
         {
             // 간단 위치 보정: pelvis 아래로 반높이만큼 배치
-            const FVector Pelvis = Mesh ? Mesh->GetBoneLocation(RagdollPelvisBoneName, EBoneSpaces::WorldSpace) : Owner->GetActorLocation();
+            FVector Pelvis = Mesh->GetBoneLocation(RagdollPelvisBoneName, EBoneSpaces::WorldSpace);
             const float HalfHeight = Capsule->GetUnscaledCapsuleHalfHeight();
+            if (Pelvis.IsNearlyZero())
+            {
+                Pelvis = Mesh->GetSocketLocation(RagdollPelvisBoneName);
+                Pelvis.Z += HalfHeight + 0.5f;
+            }
             FVector Target = Pelvis;
             Target.Z -= HalfHeight;
             Owner->SetActorLocation(Target, false, nullptr, ETeleportType::TeleportPhysics);
