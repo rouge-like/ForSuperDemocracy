@@ -3,6 +3,7 @@
 #include "Huxley/TerminidScavenger.h"
 #include "Huxley/TerminidWarrior.h"
 #include "Huxley/TerminidCharger.h"
+#include "OSC/HealthComponent.h"
 #include "Engine/World.h"
 #include "GameFramework/Pawn.h"
 #include "Kismet/GameplayStatics.h"
@@ -13,6 +14,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "GameFramework/DamageType.h"
+#include "Engine/DamageEvents.h"
 
 ATerminidSpawner::ATerminidSpawner()
 {
@@ -34,11 +36,22 @@ ATerminidSpawner::ATerminidSpawner()
 	CurrentHealth = MaxHealth;
 	bIsDestroyed = false;
 	SpawnedBlockingMesh = nullptr;
+	DestroyedSpawnerMesh = nullptr;
+
+	// HealthComponent 생성
+	Health = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
 }
 
 void ATerminidSpawner::BeginPlay()
 {
 	Super::BeginPlay();
+
+	// HealthComponent 이벤트 바인딩
+	if (Health)
+	{
+		Health->OnDamaged.AddDynamic(this, &ATerminidSpawner::OnDamaged);
+		Health->OnDeath.AddDynamic(this, &ATerminidSpawner::OnHealthComponentDeath);
+	}
 
 	InitializeSpawner();
 
@@ -289,7 +302,6 @@ FVector ATerminidSpawner::GetRandomSpawnLocation() const
 	FVector SpawnerCenter = GetActorLocation();
 
 	// 지면에 정확히 위치하도록 Z값 조정
-	SpawnerCenter.Z -= 100.0f;
 
 	return SpawnerCenter;
 }
@@ -482,32 +494,48 @@ void ATerminidSpawner::SetupDefaultSpawnQueue()
 	SpawnQueue.Add(ChargerData);
 }
 
-// 파괴 시스템 구현
-// float ATerminidSpawner::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, class AActor* DamageCauser)
-// {
-// 	// 이미 파괴된 경우 데미지 무시
-// 	if (bIsDestroyed)
-// 	{
-// 		return 0.0f;
-// 	}
-//
-// 	// 데미지 적용
-// 	CurrentHealth = FMath::Max(0.0f, CurrentHealth - DamageAmount);
-//
-// 	// 디버그 프린트: 데미지 받음
-// 	UE_LOG(LogTemp, Warning, TEXT("Spawner Hit! Damage: %.1f, Health: %.1f/%.1f"), DamageAmount, CurrentHealth, MaxHealth);
-//
-// 	// 폭발 이팩트 이벤트 호출 (Blueprint에서 구현)
-// 	OnExplosionHit(GetActorLocation(), DamageAmount);
-//
-// 	// 체력이 0 이하가 되면 파괴
-// 	if (CurrentHealth <= 0.0f)
-// 	{
-// 		DestroySpawner();
-// 	}
-//
-// 	return DamageAmount;
-// }
+// TakeDamage 오버라이드 - 폭발 데미지만 허용 (간단한 방식)
+float ATerminidSpawner::TakeDamage(float DamageAmount, const struct FDamageEvent& DamageEvent,
+                                   class AController* EventInstigator, class AActor* DamageCauser)
+{
+	// 이미 파괴된 경우 데미지 무시
+	if (bIsDestroyed)
+	{
+		return 0.0f;
+	}
+
+	// DamageCauser 이름으로 폭발물 확인 (간단한 방식)
+	FString DamageCauserName = DamageCauser ? DamageCauser->GetName() : TEXT("Unknown");
+
+	bool bIsExplosiveDamage = DamageCauserName.Contains(TEXT("Grenade")) ||
+		DamageCauserName.Contains(TEXT("Explosive")) ||
+		DamageCauserName.Contains(TEXT("Rocket")) ||
+		DamageCauserName.Contains(TEXT("Stratagem")) ||
+		DamageCauserName.Contains(TEXT("Bomb"));
+
+	if (bIsExplosiveDamage)
+	{
+		// 폭발 데미지만 적용
+		/*UE_LOG(LogTemp, Warning, TEXT("TerminidSpawner: Explosive damage %.1f from %s - APPLIED"),
+		       DamageAmount, *DamageCauserName);*/
+
+		// 부모 TakeDamage 호출
+		float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+
+		// 폭발 이펙트
+		OnExplosionHit(GetActorLocation(), DamageAmount);
+
+		return ActualDamage;
+	}
+	// 비폭발 데미지는 무시
+	/*UE_LOG(LogTemp, Log, TEXT("TerminidSpawner: Non-explosive damage %.1f from %s - IGNORED"),
+	       DamageAmount, *DamageCauserName);*/
+
+	// 비주얼 이펙트만
+	OnExplosionHit(GetActorLocation(), 0.0f);
+
+	return 0.0f; // 데미지 무시
+}
 
 void ATerminidSpawner::DestroySpawner()
 {
@@ -524,13 +552,18 @@ void ATerminidSpawner::DestroySpawner()
 	StopSpawning();
 
 	// 모든 몬스터 정리
-	ClearAllMonsters();
+	//ClearAllMonsters();
 
-	// 블로킹 메시 생성
+	// 스포너 메시를 파괴된 메시로 교체
+	ReplaceSpawnerMesh();
+
+	// 블로킹 메시 생성 (선택적)
 	CreateBlockingMesh();
 
 	// 파괴 이벤트 호출 (Blueprint에서 구현)
 	OnSpawnerDestroyed();
+
+	UE_LOG(LogTemp, Warning, TEXT("TerminidSpawner: Spawner destroyed by explosion!"));
 }
 
 float ATerminidSpawner::GetHealthPercent() const
@@ -547,7 +580,7 @@ void ATerminidSpawner::CreateBlockingMesh()
 	if (!BlockingMesh || SpawnedBlockingMesh)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Cannot create blocking mesh: %s"),
-			!BlockingMesh ? TEXT("No BlockingMesh assigned") : TEXT("Already created"));
+		       !BlockingMesh ? TEXT("No BlockingMesh assigned") : TEXT("Already created"));
 		return; // 메시가 없거나 이미 생성된 경우
 	}
 
@@ -570,6 +603,61 @@ void ATerminidSpawner::CreateBlockingMesh()
 	// 디버그 프린트: 블로킹 메시 생성 완료
 	UE_LOG(LogTemp, Warning, TEXT("Blocking mesh created successfully! Spawn entrance blocked."));
 }
+
+void ATerminidSpawner::ReplaceSpawnerMesh()
+{
+	if (!DestroyedSpawnerMesh)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("TerminidSpawner: No DestroyedSpawnerMesh assigned"));
+		return;
+	}
+
+	// 현재 스포너의 StaticMeshComponent 찾기
+	UStaticMeshComponent* CurrentMeshComp = FindComponentByClass<UStaticMeshComponent>();
+	if (!CurrentMeshComp)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("TerminidSpawner: No StaticMeshComponent found to replace"));
+		return;
+	}
+
+	// 메시를 파괴된 스포너 메시로 교체
+	CurrentMeshComp->SetStaticMesh(DestroyedSpawnerMesh);
+
+	UE_LOG(LogTemp, Log, TEXT("TerminidSpawner: Mesh replaced with destroyed spawner mesh"));
+}
+
+// HealthComponent 이벤트 핸들러들
+void ATerminidSpawner::OnHealthComponentDeath(AActor* Victim)
+{
+	UE_LOG(LogTemp, Warning, TEXT("TerminidSpawner: Health depleted, destroying spawner"));
+	DestroySpawner();
+}
+
+void ATerminidSpawner::OnDamaged(float Damage, AActor* DamageCauser, AController* EventInstigator,
+                                 TSubclassOf<UDamageType> DamageType)
+{
+	// 이미 파괴된 경우 무시
+	if (bIsDestroyed)
+	{
+		return;
+	}
+
+	// 현재 체력 업데이트 (HealthComponent와 동기화)
+	if (Health)
+	{
+		CurrentHealth = Health->GetHealthPercent() * MaxHealth;
+	}
+
+	// 폭발 이팩트 이벤트 호출 (Blueprint에서 구현)
+	FVector HitLocation = GetActorLocation();
+	OnExplosionHit(HitLocation, Damage);
+
+	// 데미지 소스 로깅
+	FString DamageCauserName = DamageCauser ? DamageCauser->GetName() : TEXT("Unknown");
+	UE_LOG(LogTemp, Log, TEXT("TerminidSpawner: Received %.1f damage from %s. Health: %.1f/%.1f"),
+	       Damage, *DamageCauserName, CurrentHealth, MaxHealth);
+}
+
 
 #if WITH_EDITOR
 void ATerminidSpawner::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)

@@ -51,6 +51,21 @@ void ATerminidWarrior::TriggerDodgeAnimation()
     );
 }
 
+void ATerminidWarrior::ProcessAttackBehavior(float DeltaTime)
+{
+    // 회피 중에는 공격하지 않음
+    if (bIsDodging)
+    {
+        return;
+    }
+
+    // 공격 애니메이션 호출
+    OnAttackAnimation();
+
+    // 기본 공격 행동
+    Super::ProcessAttackBehavior(DeltaTime);
+}
+
 // 데미지 처리 오버라이드 - 회피 시스템
 float ATerminidWarrior::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, class AActor* DamageCauser)
 {

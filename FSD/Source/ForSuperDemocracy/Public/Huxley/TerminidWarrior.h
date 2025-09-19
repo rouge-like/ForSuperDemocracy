@@ -35,6 +35,9 @@ protected:
     // 데미지 처리 오버라이드 - 회피 시스템
     virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, class AActor* DamageCauser) override;
 
+    // 공격 행동 오버라이드 - 회피 중에는 공격하지 않음
+    virtual void ProcessAttackBehavior(float DeltaTime) override;
+
 private:
     // 회피 관련 변수들
     bool bIsDodging;

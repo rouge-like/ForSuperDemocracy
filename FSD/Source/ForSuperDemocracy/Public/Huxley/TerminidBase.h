@@ -93,6 +93,10 @@ public:
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation")
     float SpawnAnimationDuration;
+
+    // 스폰 애니메이션 에셋 (각 유닛별로 다름)
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation")
+    class UAnimSequence* SpawnAnimationSequence;
     
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation")
     float AttackAnimationDuration;
@@ -170,6 +174,13 @@ public:
 
     UFUNCTION(BlueprintPure, Category = "Spawning")
     bool IsSpawning() const { return bIsSpawning; }
+
+    // 애니메이션 재생 함수
+    UFUNCTION(BlueprintCallable, Category = "Animation")
+    void PlaySpawnAnimation();
+
+    UFUNCTION(BlueprintPure, Category = "Animation")
+    UAnimSequence* GetSpawnAnimationSequence() const { return SpawnAnimationSequence; }
     
     // 공격 애니메이션 관리
     UFUNCTION(BlueprintCallable, Category = "Animation")
@@ -359,30 +370,23 @@ public:
     float SoundDetectionRange;
 
 protected:
+    // 타이머 핸들들 (파생 클래스에서 접근 가능)
+    FTimerHandle SpawnTimerHandle;
+    FTimerHandle HurtRecoveryTimerHandle;
+    FTimerHandle BurrowEmergeTimerHandle;
+    FTimerHandle AttackAnimationTimerHandle;
+    FTimerHandle HealthRegenerationTimerHandle;
 
 private:
     void UpdateMovement(float DeltaTime);
     void HandleDeath();
-    
+
     // 플레이어 감지 관련
     float LastPlayerDetectionTime;
     static constexpr float PLAYER_DETECTION_INTERVAL = 0.5f; // 0.5초마다 감지 체크
-    
-    // 스폰 타이머 핸들
-    FTimerHandle SpawnTimerHandle;
-    
-    // 피격 회복 타이머 핸들
-    FTimerHandle HurtRecoveryTimerHandle;
-    
-    // Burrow 이머지 타이머 핸들
-    FTimerHandle BurrowEmergeTimerHandle;
-
-    // 공격 애니메이션 타이머 핸들
-    FTimerHandle AttackAnimationTimerHandle;
 
     // 체력 회복 관련
     bool bIsRegeneratingHealth;
-    FTimerHandle HealthRegenerationTimerHandle;
 
 #if WITH_EDITOR
 public:

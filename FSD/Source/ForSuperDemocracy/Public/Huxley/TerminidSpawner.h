@@ -140,9 +140,17 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Destruction")
 	UStaticMesh* BlockingMesh;
 
-	// 파괴 관련 함수들
-	// UFUNCTION(BlueprintCallable, Category = "Destruction")
-	// virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, class AActor* DamageCauser) override;
+	// 파괴된 스포너 메시 (교체용)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Destruction")
+	UStaticMesh* DestroyedSpawnerMesh;
+
+	// HealthComponent 추가 (OSC 시스템과 연동)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Health")
+	class UHealthComponent* Health;
+
+	// 파괴 관련 함수들 - TakeDamage 오버라이드로 폭발 데미지만 허용
+	UFUNCTION(BlueprintCallable, Category = "Destruction")
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, class AActor* DamageCauser) override;
 
 	UFUNCTION(BlueprintCallable, Category = "Destruction")
 	void DestroySpawner();
@@ -159,6 +167,14 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "Destruction")
 	void OnSpawnerDestroyed();
+
+	// HealthComponent 이벤트 핸들러
+	UFUNCTION()
+	void OnHealthComponentDeath(AActor* Victim);
+
+	UFUNCTION()
+	void OnDamaged(float Damage, AActor* DamageCauser, AController* EventInstigator, TSubclassOf<UDamageType> DamageType);
+
 
 protected:
 	// 스폰 시스템 업데이트
@@ -202,6 +218,7 @@ private:
 
 	// 파괴 시스템 관련
 	void CreateBlockingMesh();
+	void ReplaceSpawnerMesh();
 
 	// 블로킹 메시 컴포넌트
 	UPROPERTY()

@@ -72,6 +72,7 @@ ATerminidBase::ATerminidBase()
 	bIsPlayingAnimation = false;
 	bIsPlayingAttackAnimation = false;
 	SpawnAnimationDuration = 2.0f;
+	SpawnAnimationSequence = nullptr; // 각 유닛에서 설정
 	AttackAnimationDuration = 1.0f; // 공격 애니메이션 기본 1초
 
 	// 체력 회복 관련 초기화
@@ -897,16 +898,34 @@ void ATerminidBase::StartSpawnSequence()
 	// 이동 비활성화
 	StopMovement();
 
-	// Blueprint 애니메이션 이벤트 호출
+	// C++에서 직접 애니메이션 재생
+	PlaySpawnAnimation();
+
+	// Blueprint 애니메이션 이벤트 호출 (추가 처리가 필요한 경우)
 	OnSpawnAnimationStart();
 
-	// 스폰 애니메이션 완료 타이머 설정
-	GetWorld()->GetTimerManager().SetTimer(
-		SpawnTimerHandle,
-		[this]() { CompleteSpawnSequence(); },
-		SpawnAnimationDuration,
-		false
-	);
+	// 애니메이션이 없으면 즉시 완료, 있으면 타이머 설정
+	if (!SpawnAnimationSequence)
+	{
+		UE_LOG(LogTemp, Log, TEXT("TerminidBase: No spawn animation, completing spawn immediately for %s"), *GetClass()->GetName());
+		// 애니메이션이 없으면 0.1초 후 즉시 완료 (자연스러운 딜레이)
+		GetWorld()->GetTimerManager().SetTimer(
+			SpawnTimerHandle,
+			[this]() { CompleteSpawnSequence(); },
+			0.1f,
+			false
+		);
+	}
+	else
+	{
+		// 스폰 애니메이션 완료 타이머 설정
+		GetWorld()->GetTimerManager().SetTimer(
+			SpawnTimerHandle,
+			[this]() { CompleteSpawnSequence(); },
+			SpawnAnimationDuration,
+			false
+		);
+	}
 }
 
 void ATerminidBase::CompleteSpawnSequence()
@@ -917,14 +936,58 @@ void ATerminidBase::CompleteSpawnSequence()
 	// Blueprint 애니메이션 완료 이벤트 호출
 	OnSpawnAnimationComplete();
 
-	// AI 활성화 - Idle 상태로 전환하여 정상적인 AI 시작
-	if (StateMachine)
+	// 플레이어 감지 후 바로 Chase 상태로 전환
+	APawn* NearestPlayer = FindNearestPlayer();
+	if (NearestPlayer)
 	{
-		StateMachine->ChangeState(ETerminidState::Idle);
+		SetCurrentTarget(NearestPlayer);
+		if (StateMachine)
+		{
+			StateMachine->ChangeState(ETerminidState::Chase);
+		}
+		UE_LOG(LogTemp, Log, TEXT("TerminidBase: Spawn completed, entering Chase state targeting %s"), *NearestPlayer->GetName());
+	}
+	else
+	{
+		// 플레이어가 없으면 Idle 상태로 (기존 동작)
+		if (StateMachine)
+		{
+			StateMachine->ChangeState(ETerminidState::Idle);
+		}
+		UE_LOG(LogTemp, Log, TEXT("TerminidBase: Spawn completed, no player found - entering Idle state"));
 	}
 
 	// 타이머 핸들 정리
 	GetWorld()->GetTimerManager().ClearTimer(SpawnTimerHandle);
+}
+
+// 애니메이션 재생 함수
+void ATerminidBase::PlaySpawnAnimation()
+{
+	if (!SpawnAnimationSequence)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("TerminidBase: No SpawnAnimationSequence assigned for %s"), *GetClass()->GetName());
+		return;
+	}
+
+	USkeletalMeshComponent* MeshComp = GetMesh();
+	if (!MeshComp)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("TerminidBase: No SkeletalMeshComponent found"));
+		return;
+	}
+
+	// 애니메이션 재생
+	MeshComp->GetAnimInstance()->PlaySlotAnimationAsDynamicMontage(
+		SpawnAnimationSequence,
+		TEXT("DefaultSlot"),
+		0.25f, // BlendInTime
+		0.25f, // BlendOutTime
+		1.0f,  // PlayRate
+		1      // LoopCount (1회만 재생)
+	);
+
+	UE_LOG(LogTemp, Log, TEXT("TerminidBase: Playing spawn animation %s"), *SpawnAnimationSequence->GetName());
 }
 
 // 체력 회복 시스템

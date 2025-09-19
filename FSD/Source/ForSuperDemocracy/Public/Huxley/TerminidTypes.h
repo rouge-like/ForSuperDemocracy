@@ -77,7 +77,7 @@ struct FORSUPERDEMOCRACY_API FTerminidStats
 	{
 		FTerminidStats Stats;
 		Stats.Health = 25.0f;
-		Stats.MoveSpeed = 800.0f;
+		Stats.MoveSpeed = 1000.0f;
 		Stats.AttackDamage = 15.0f;
 		Stats.AttackCooldown = 1.0f;
 		Stats.AttackRange = 100;
@@ -93,7 +93,7 @@ struct FORSUPERDEMOCRACY_API FTerminidStats
 		Stats.MoveSpeed = 600.0f;
 		Stats.AttackDamage = 40.0f;
 		Stats.AttackCooldown = 1.5f;
-		Stats.AttackRange = 120;
+		Stats.AttackRange = 180;
 		Stats.DetectionRange = 200; // 800 / 4
 		Stats.TerminidTypeID = static_cast<uint8>(ETerminidType::Warrior);
 		return Stats;
@@ -106,7 +106,7 @@ struct FORSUPERDEMOCRACY_API FTerminidStats
 		Stats.MoveSpeed = 500.0f;
 		Stats.AttackDamage = 100.0f;
 		Stats.AttackCooldown = 2.5f;
-		Stats.AttackRange = 120;
+		Stats.AttackRange = 250;
 		Stats.DetectionRange = 250; // 1000 / 4
 		Stats.TerminidTypeID = static_cast<uint8>(ETerminidType::Charger);
 		return Stats;
