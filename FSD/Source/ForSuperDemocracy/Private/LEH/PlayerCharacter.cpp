@@ -72,7 +72,7 @@ void APlayerCharacter::BeginPlay()
 	if (HealthComp)
 	{
 		HealthComp->OnDamaged.AddDynamic(this, &APlayerCharacter::OnDamaged);
-		HealthComp->OnDeath.AddDynamic(this, &APlayerCharacter::OnDeath);
+		//HealthComp->OnDeath.AddDynamic(this, &APlayerCharacter::OnDeath);
 	}
 
 	if (WeaponComp)

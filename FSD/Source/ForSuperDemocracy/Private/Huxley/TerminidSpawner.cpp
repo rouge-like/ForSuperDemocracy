@@ -605,9 +605,14 @@ void ATerminidSpawner::ReplaceSpawnerMesh()
 	{
 		return;
 	}
-
+	UStaticMesh* loadedMesh;
+	if (DestroyedSpawnerMesh.IsValid())
+		loadedMesh = DestroyedSpawnerMesh.Get();
+	else
+		loadedMesh = DestroyedSpawnerMesh.LoadSynchronous();
+	
 	// 메시를 파괴된 스포너 메시로 교체
-	CurrentMeshComp->SetStaticMesh(DestroyedSpawnerMesh);
+	CurrentMeshComp->SetStaticMesh(loadedMesh);
 
 }
 

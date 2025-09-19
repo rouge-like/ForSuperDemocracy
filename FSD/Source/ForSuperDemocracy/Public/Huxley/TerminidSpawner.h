@@ -142,7 +142,7 @@ public:
 
 	// 파괴된 스포너 메시 (교체용)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Destruction")
-	UStaticMesh* DestroyedSpawnerMesh;
+	TSoftObjectPtr<UStaticMesh> DestroyedSpawnerMesh;
 
 	// HealthComponent 추가 (OSC 시스템과 연동)
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Health")

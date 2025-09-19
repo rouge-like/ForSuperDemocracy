@@ -59,7 +59,7 @@ ATerminidBase::ATerminidBase()
 	LastAttackTime = 0.0f;
 	bCanAttack = true;
 	LastHurtTime = 0.0f;
-	HurtRecoveryTime = 1.5f; // 1.5초 후 복원
+	HurtRecoveryTime = 0.8f; // 1.5초 후 복원
 
 	// Burrow 관련 초기화
 	bStartInBurrow = false;
