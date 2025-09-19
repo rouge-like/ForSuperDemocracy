@@ -515,10 +515,6 @@ float ATerminidSpawner::TakeDamage(float DamageAmount, const struct FDamageEvent
 
 	if (bIsExplosiveDamage)
 	{
-		// 폭발 데미지만 적용
-		/*UE_LOG(LogTemp, Warning, TEXT("TerminidSpawner: Explosive damage %.1f from %s - APPLIED"),
-		       DamageAmount, *DamageCauserName);*/
-
 		// 부모 TakeDamage 호출
 		float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 
@@ -527,10 +523,6 @@ float ATerminidSpawner::TakeDamage(float DamageAmount, const struct FDamageEvent
 
 		return ActualDamage;
 	}
-	// 비폭발 데미지는 무시
-	/*UE_LOG(LogTemp, Log, TEXT("TerminidSpawner: Non-explosive damage %.1f from %s - IGNORED"),
-	       DamageAmount, *DamageCauserName);*/
-
 	// 비주얼 이펙트만
 	OnExplosionHit(GetActorLocation(), 0.0f);
 
@@ -563,7 +555,6 @@ void ATerminidSpawner::DestroySpawner()
 	// 파괴 이벤트 호출 (Blueprint에서 구현)
 	OnSpawnerDestroyed();
 
-	UE_LOG(LogTemp, Warning, TEXT("TerminidSpawner: Spawner destroyed by explosion!"));
 }
 
 float ATerminidSpawner::GetHealthPercent() const
@@ -579,8 +570,6 @@ void ATerminidSpawner::CreateBlockingMesh()
 {
 	if (!BlockingMesh || SpawnedBlockingMesh)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Cannot create blocking mesh: %s"),
-		       !BlockingMesh ? TEXT("No BlockingMesh assigned") : TEXT("Already created"));
 		return; // 메시가 없거나 이미 생성된 경우
 	}
 
@@ -601,14 +590,12 @@ void ATerminidSpawner::CreateBlockingMesh()
 	SpawnedBlockingMesh->RegisterComponent();
 
 	// 디버그 프린트: 블로킹 메시 생성 완료
-	UE_LOG(LogTemp, Warning, TEXT("Blocking mesh created successfully! Spawn entrance blocked."));
 }
 
 void ATerminidSpawner::ReplaceSpawnerMesh()
 {
 	if (!DestroyedSpawnerMesh)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("TerminidSpawner: No DestroyedSpawnerMesh assigned"));
 		return;
 	}
 
@@ -616,20 +603,17 @@ void ATerminidSpawner::ReplaceSpawnerMesh()
 	UStaticMeshComponent* CurrentMeshComp = FindComponentByClass<UStaticMeshComponent>();
 	if (!CurrentMeshComp)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("TerminidSpawner: No StaticMeshComponent found to replace"));
 		return;
 	}
 
 	// 메시를 파괴된 스포너 메시로 교체
 	CurrentMeshComp->SetStaticMesh(DestroyedSpawnerMesh);
 
-	UE_LOG(LogTemp, Log, TEXT("TerminidSpawner: Mesh replaced with destroyed spawner mesh"));
 }
 
 // HealthComponent 이벤트 핸들러들
 void ATerminidSpawner::OnHealthComponentDeath(AActor* Victim)
 {
-	UE_LOG(LogTemp, Warning, TEXT("TerminidSpawner: Health depleted, destroying spawner"));
 	DestroySpawner();
 }
 
