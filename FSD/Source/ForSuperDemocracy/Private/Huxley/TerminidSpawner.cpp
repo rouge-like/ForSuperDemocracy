@@ -153,6 +153,9 @@ ATerminidBase* ATerminidSpawner::SpawnTerminid(ETerminidType TerminidType, const
 		NewTerminid->InitializeTerminid(Stats, TerminidType);
 		NewTerminid->SetParentSpawner(this);
 
+		// 스포너에서 생성된 터미니드로 표시
+		NewTerminid->bIsSpawnedBySpawner = true;
+
 		// 스폰 애니메이션 시작 (AI 비활성화)
 		NewTerminid->StartSpawnSequence();
 
