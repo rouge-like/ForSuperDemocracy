@@ -12,6 +12,7 @@
 #include "NavigationSystem.h"
 #include "DrawDebugHelpers.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/SceneComponent.h"
 #include "Engine/StaticMesh.h"
 #include "GameFramework/DamageType.h"
 #include "Engine/DamageEvents.h"
@@ -19,6 +20,25 @@
 ATerminidSpawner::ATerminidSpawner()
 {
 	PrimaryActorTick.bCanEverTick = true;
+
+	// 메시 컴포넌트들 생성
+	NormalMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("NormalMesh"));
+	RootComponent = NormalMeshComponent;
+
+	DestroyedMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("DestroyedMesh"));
+	DestroyedMeshComponent->SetupAttachment(RootComponent);
+
+	// 초기에는 파괴된 메시는 숨기고 콜리전도 비활성화
+	DestroyedMeshComponent->SetVisibility(false);
+	DestroyedMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	// 스폰 포인트 컴포넌트 생성
+	SpawnPoint = CreateDefaultSubobject<USceneComponent>(TEXT("SpawnPoint"));
+	SpawnPoint->SetupAttachment(RootComponent);
+
+	// 스폰 포인트 기본 위치 설정 (스포너 앞쪽으로 약간 떨어진 위치)
+	SpawnPoint->SetRelativeLocation(FVector(200.0f, 0.0f, 0.0f));
+	SpawnPoint->SetRelativeRotation(FRotator(0.0f, 0.0f, 0.0f));
 
 	// 기본값 설정
 	SpawnInterval = 3.0f;
@@ -36,7 +56,6 @@ ATerminidSpawner::ATerminidSpawner()
 	CurrentHealth = MaxHealth;
 	bIsDestroyed = false;
 	SpawnedBlockingMesh = nullptr;
-	DestroyedSpawnerMesh = nullptr;
 
 	// HealthComponent 생성
 	Health = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
@@ -60,6 +79,47 @@ void ATerminidSpawner::BeginPlay()
 	{
 		StartSpawning();
 	}
+}
+
+void ATerminidSpawner::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	// 스폰 중지
+	StopSpawning();
+
+	// 모든 타이머 정리
+	if (UWorld* World = GetWorld())
+	{
+		FTimerManager& TimerManager = World->GetTimerManager();
+		TimerManager.ClearTimer(SpawnTimerHandle);
+		TimerManager.ClearTimer(PlayerCheckTimerHandle);
+	}
+
+	// HealthComponent 이벤트 언바인딩
+	if (Health)
+	{
+		Health->OnDamaged.RemoveAll(this);
+		Health->OnDeath.RemoveAll(this);
+	}
+
+	// 활성 몬스터 목록 안전하게 정리
+	for (int32 i = ActiveMonsters.Num() - 1; i >= 0; --i)
+	{
+		if (ActiveMonsters.IsValidIndex(i) && IsValid(ActiveMonsters[i]))
+		{
+			ATerminidBase* Monster = ActiveMonsters[i];
+			if (Monster)
+			{
+				Monster->SetParentSpawner(nullptr);
+			}
+		}
+	}
+	ActiveMonsters.Empty();
+
+	// 컨테이너들 안전하게 정리
+	ActiveMonsterCounts.Empty();
+	SpawnQueue.Empty();
+
+	Super::EndPlay(EndPlayReason);
 }
 
 void ATerminidSpawner::Tick(float DeltaTime)
@@ -92,7 +152,20 @@ void ATerminidSpawner::StartSpawning()
 void ATerminidSpawner::StopSpawning()
 {
 	bIsSpawningActive = false;
-	GetWorld()->GetTimerManager().ClearTimer(SpawnTimerHandle);
+
+	// 안전하게 타이머 정리
+	if (UWorld* World = GetWorld())
+	{
+		FTimerManager& TimerManager = World->GetTimerManager();
+		if (SpawnTimerHandle.IsValid())
+		{
+			TimerManager.ClearTimer(SpawnTimerHandle);
+		}
+		if (PlayerCheckTimerHandle.IsValid())
+		{
+			TimerManager.ClearTimer(PlayerCheckTimerHandle);
+		}
+	}
 }
 
 void ATerminidSpawner::PauseSpawning()
@@ -120,6 +193,9 @@ ATerminidBase* ATerminidSpawner::SpawnTerminid(ETerminidType TerminidType, const
 	// 	return nullptr;
 	// }
 
+	// SpawnPoint의 회전값 가져오기
+	FRotator SpawnRotation = GetSpawnPointRotation();
+
 	// Terminid 스폰
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Owner = this;
@@ -128,7 +204,7 @@ ATerminidBase* ATerminidSpawner::SpawnTerminid(ETerminidType TerminidType, const
 	ATerminidBase* NewTerminid = GetWorld()->SpawnActor<ATerminidBase>(
 		TerminidClass,
 		SpawnLocation,
-		FRotator::ZeroRotator,
+		SpawnRotation,
 		SpawnParams
 	);
 
@@ -261,25 +337,38 @@ bool ATerminidSpawner::IsSpawningActive() const
 
 void ATerminidSpawner::OnMonsterDeath(ATerminidBase* DeadMonster)
 {
-	if (DeadMonster)
+	if (IsValid(DeadMonster))
 	{
-		ActiveMonsters.RemoveSingle(DeadMonster);
-		UpdateActiveMonsterCounts();
+		// 안전하게 제거
+		int32 RemovedCount = ActiveMonsters.RemoveSingle(DeadMonster);
+		if (RemovedCount > 0)
+		{
+			UpdateActiveMonsterCounts();
+		}
+
+		// 부모 스포너 참조 해제
+		DeadMonster->SetParentSpawner(nullptr);
 	}
 }
 
 void ATerminidSpawner::ClearAllMonsters()
 {
-	for (ATerminidBase* Monster : ActiveMonsters)
+	// 안전하게 모든 몬스터 정리
+	for (int32 i = ActiveMonsters.Num() - 1; i >= 0; --i)
 	{
-		if (IsValid(Monster))
+		if (ActiveMonsters.IsValidIndex(i))
 		{
-			Monster->Die();
+			ATerminidBase* Monster = ActiveMonsters[i];
+			if (IsValid(Monster) && Monster->IsValidLowLevel())
+			{
+				Monster->SetParentSpawner(nullptr);
+				Monster->Die();
+			}
 		}
 	}
 
 	ActiveMonsters.Empty();
-	ActiveMonsterCounts.Empty();
+	ActiveMonsterCounts.Reset();
 }
 
 // 스폰 큐 관리
@@ -298,20 +387,40 @@ void ATerminidSpawner::ResetSpawnQueue()
 	CurrentSpawnIndex = 0;
 }
 
-// 스폰 위치 계산 (중앙 스폰으로 변경)
+// 스폰 위치 계산 (SpawnPoint 기반으로 변경)
 FVector ATerminidSpawner::GetRandomSpawnLocation() const
 {
-	// 스포너 중앙에서 바로 스폰 (애니메이션 시퀀스를 위해)
-	FVector SpawnerCenter = GetActorLocation();
+	if (!SpawnPoint)
+	{
+		// SpawnPoint가 없으면 기본 위치 반환
+		return GetActorLocation();
+	}
 
-	// 지면에 정확히 위치하도록 Z값 조정
-
-	return SpawnerCenter;
+	// SpawnPoint의 월드 위치 반환
+	return SpawnPoint->GetComponentLocation();
 }
 
 FVector ATerminidSpawner::GetSpawnLocationWithOffset(const FVector& Offset) const
 {
-	return GetActorLocation() + Offset;
+	return GetSpawnPointLocation() + Offset;
+}
+
+FVector ATerminidSpawner::GetSpawnPointLocation() const
+{
+	if (!SpawnPoint)
+	{
+		return GetActorLocation();
+	}
+	return SpawnPoint->GetComponentLocation();
+}
+
+FRotator ATerminidSpawner::GetSpawnPointRotation() const
+{
+	if (!SpawnPoint)
+	{
+		return GetActorRotation();
+	}
+	return SpawnPoint->GetComponentRotation();
 }
 
 // 플레이어 관련
@@ -424,10 +533,17 @@ TSubclassOf<ATerminidBase> ATerminidSpawner::GetTerminidClass(ETerminidType Term
 // Private 함수들
 void ATerminidSpawner::InitializeSpawner()
 {
+	// 안전하게 초기화
 	ActiveMonsters.Empty();
-	ActiveMonsterCounts.Empty();
+	ActiveMonsterCounts.Reset();
 	CurrentSpawnIndex = 0;
 	LastSpawnTime = 0.0f;
+	bIsSpawningActive = false;
+	bIsSpawningPaused = false;
+
+	// 타이머 핸들 초기화
+	SpawnTimerHandle.Invalidate();
+	PlayerCheckTimerHandle.Invalidate();
 
 	// 기본 스폰 큐 설정
 	if (SpawnQueue.Num() == 0)
@@ -438,26 +554,46 @@ void ATerminidSpawner::InitializeSpawner()
 
 void ATerminidSpawner::UpdateActiveMonsterCounts()
 {
-	ActiveMonsterCounts.Empty();
+	// 안전하게 컨테이너 정리
+	ActiveMonsterCounts.Reset();
 
-	for (ATerminidBase* Monster : ActiveMonsters)
+	// 유효한 몬스터들만 카운트
+	for (int32 i = 0; i < ActiveMonsters.Num(); ++i)
 	{
-		if (IsValid(Monster))
+		if (ActiveMonsters.IsValidIndex(i))
 		{
-			ETerminidType Type = Monster->GetTerminidType();
-			int32& Count = ActiveMonsterCounts.FindOrAdd(Type);
-			Count++;
+			ATerminidBase* Monster = ActiveMonsters[i];
+			if (IsValid(Monster) && Monster->IsValidLowLevel())
+			{
+				ETerminidType Type = Monster->GetTerminidType();
+				int32* CountPtr = ActiveMonsterCounts.Find(Type);
+				if (CountPtr)
+				{
+					(*CountPtr)++;
+				}
+				else
+				{
+					ActiveMonsterCounts.Add(Type, 1);
+				}
+			}
 		}
 	}
 }
 
 void ATerminidSpawner::CleanupInvalidMonsters()
 {
-	// 무효하거나 죽은 몬스터들 제거
-	ActiveMonsters.RemoveAll([](ATerminidBase* Monster)
+	// 무효하거나 죽은 몬스터들 안전하게 제거
+	for (int32 i = ActiveMonsters.Num() - 1; i >= 0; --i)
 	{
-		return !IsValid(Monster) || !Monster->IsAlive();
-	});
+		if (ActiveMonsters.IsValidIndex(i))
+		{
+			ATerminidBase* Monster = ActiveMonsters[i];
+			if (!IsValid(Monster) || !Monster->IsValidLowLevel() || !Monster->IsAlive())
+			{
+				ActiveMonsters.RemoveAtSwap(i);
+			}
+		}
+	}
 
 	UpdateActiveMonsterCounts();
 }
@@ -549,8 +685,8 @@ void ATerminidSpawner::DestroySpawner()
 	// 모든 몬스터 정리
 	//ClearAllMonsters();
 
-	// 스포너 메시를 파괴된 메시로 교체
-	ReplaceSpawnerMesh();
+	// 스포너 메시를 파괴된 메시로 전환
+	SwitchToDestroyedMesh();
 
 	// 블로킹 메시 생성 (선택적)
 	CreateBlockingMesh();
@@ -595,28 +731,23 @@ void ATerminidSpawner::CreateBlockingMesh()
 	// 디버그 프린트: 블로킹 메시 생성 완료
 }
 
-void ATerminidSpawner::ReplaceSpawnerMesh()
+void ATerminidSpawner::SwitchToDestroyedMesh()
 {
-	if (!DestroyedSpawnerMesh)
+	if (!NormalMeshComponent || !DestroyedMeshComponent)
 	{
 		return;
 	}
 
-	// 현재 스포너의 StaticMeshComponent 찾기
-	UStaticMeshComponent* CurrentMeshComp = FindComponentByClass<UStaticMeshComponent>();
-	if (!CurrentMeshComp)
-	{
-		return;
-	}
-	UStaticMesh* loadedMesh;
-	if (DestroyedSpawnerMesh.IsValid())
-		loadedMesh = DestroyedSpawnerMesh.Get();
-	else
-		loadedMesh = DestroyedSpawnerMesh.LoadSynchronous();
-	
-	// 메시를 파괴된 스포너 메시로 교체
-	CurrentMeshComp->SetStaticMesh(loadedMesh);
+	// 기본 메시를 숨기고 콜리전 비활성화
+	NormalMeshComponent->SetVisibility(false);
+	NormalMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
+	// 파괴된 메시를 보이게 하고 콜리전 활성화
+	DestroyedMeshComponent->SetVisibility(true);
+	DestroyedMeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+
+	// 파괴된 메시가 기본 메시와 같은 트랜스폼을 가지도록 설정
+	DestroyedMeshComponent->SetRelativeTransform(FTransform::Identity);
 }
 
 // HealthComponent 이벤트 핸들러들
