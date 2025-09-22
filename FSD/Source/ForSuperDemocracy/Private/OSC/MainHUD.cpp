@@ -7,6 +7,7 @@
 #include "OSC/MissionData.h"
 #include "OSC/MainMode.h"
 #include "OSC/MissionComponent.h"
+#include "OSC/UI/CompassWidget.h"
 #include "OSC/UI/MissionWidget.h"
 
 void AMainHUD::BeginPlay()
@@ -25,6 +26,11 @@ void AMainHUD::BeginPlay()
 	if (auto* GM = GetWorld()->GetAuthGameMode<AMainMode>())
 	{
 		auto* MC = GM->GetMissionComponent();
+		if (MainUI && MainUI->GetCompassWidget())
+		{
+			MainUI->GetCompassWidget()->InitializeCompass(MC);
+		}
+
 		MC->OnObjectiveChanged.AddDynamic(this, &AMainHUD::OnMissionObjectiveChanged);
 		MC->OnObjectiveUpdated.AddDynamic(this, &AMainHUD::OnMissionObjectiveUpdate);
 		MC->OnTimerTick.AddDynamic(this, &AMainHUD::OnMissionTimerTick);
