@@ -45,9 +45,15 @@ void UPlayerFSM::SetPlayerState(EPlayerState NewState)
 	}
 	
 	// 바꾸기 전 상태 저장
+	if (NewState == EPlayerState::Damage && _State == EPlayerState::Damage)
+	{
+		return;
+	}
+
 	PreviousState = _State;
-	
 	_State = NewState;
+
+	//UE_LOG(LogTemp, Warning, TEXT("Prev : %s, Cur : %s"), *UEnum::GetValueAsString(PreviousState),*UEnum::GetValueAsString(_State));
 }
 
 EPlayerState UPlayerFSM::GetPreviousPlayerState()

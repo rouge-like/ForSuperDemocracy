@@ -68,6 +68,8 @@ public:
 	
 public:
 	// Damage
+	bool IsPlayingDamageAnim = false;
+	
 	FTimerHandle DamageTimerHandle;
 	
 	UFUNCTION()
@@ -135,9 +137,7 @@ public:
 	// Fire
 	UFUNCTION()
 	void OnWeaponFired(AWeaponBase* Weapon);
-
-
-
+	
     // Camera recoil (kickback)
     UFUNCTION(BlueprintCallable, Category=Recoil)
     void ApplyCameraKick(AWeaponBase* Weapon);
@@ -151,6 +151,7 @@ protected:
     float CurrentCameraKick = 0.f; // 누적 킥백(cm)
 
     float DefaultArmLength = 0.f; // BeginPlay에서 초기화
+	
 public:
 	// Montage
 	void PlayReloadMontage();

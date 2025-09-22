@@ -72,7 +72,7 @@ void APlayerCharacter::BeginPlay()
 	if (HealthComp)
 	{
 		HealthComp->OnDamaged.AddDynamic(this, &APlayerCharacter::OnDamaged);
-		//HealthComp->OnDeath.AddDynamic(this, &APlayerCharacter::OnDeath);
+		HealthComp->OnDeath.AddDynamic(this, &APlayerCharacter::OnDeath);
 	}
 
 	if (WeaponComp)
@@ -194,31 +194,29 @@ void APlayerCharacter::ViewCurrentWeapon(bool Visibility)
 void APlayerCharacter::OnDamaged(float Damage, AActor* DamageCauser, AController* EventInstigator,
                                  TSubclassOf<UDamageType> DamageType)
 {
-	// 뭘 넣어야해?
-	// 데미지 받았을 때 뭘 할거야?
-	// 1. 피격 애니메이션 재생
-	if(FSMComp->GetPlayerState() == EPlayerState::Damage || FSMComp->GetPlayerState() == EPlayerState::Dead)
+	// Dead 시 OnDamaged 호출 안됨
+	if(IsPlayingDamageAnim)
 	{
 		return;
 	}
+
+	IsPlayingDamageAnim = true;
 	
 	FSMComp->SetPlayerState(EPlayerState::Damage);
-
-	UE_LOG(LogTemp, Warning, TEXT("DamageStart"));
 	
 	GetWorldTimerManager().SetTimer(DamageTimerHandle, FTimerDelegate::CreateLambda([&]
 	{
-		FSMComp->SetPlayerState(EPlayerState::Move);
-		UE_LOG(LogTemp, Warning, TEXT("DamageEnd"));
-		// FSMComp->GetPreviousPlayerState() 이거 문제있는듯
+		FSMComp->SetPlayerState(FSMComp->GetPreviousPlayerState());
+		IsPlayingDamageAnim = false;
 		
-	}), 1.f, false);
+	}), 0.5f, false);
 }
 
 void APlayerCharacter::OnDeath(AActor* Victim)
 {
-	GetWorldTimerManager().ClearTimer(DamageTimerHandle);
-	FSMComp->SetPlayerState(EPlayerState::Dead);
+	UE_LOG(LogTemp, Display, TEXT("dead"));
+	//GetWorldTimerManager().ClearTimer(DamageTimerHandle);
+	//FSMComp->SetPlayerState(EPlayerState::Dead);
 }
 
 
@@ -262,12 +260,12 @@ void APlayerCharacter::StartCameraProne(bool IsProning)
 
 	FTimerHandle TimerHandle;
 
-	// prone <-> idle/move 사이 움직일 텀 필요
+	// Prone start/end동안 잠깐 멈춤
 	GetCharacterMovement()->SetMovementMode(MOVE_None);
 	GetWorldTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda([&]
 	{
 		GetCharacterMovement()->SetMovementMode(MOVE_Walking);
-	}), 0.1f, false);
+	}), 0.8f, false);
 	
 	if (IsProning)
 	{
