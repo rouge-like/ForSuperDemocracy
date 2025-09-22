@@ -15,6 +15,8 @@ void AHitscanWeapon::FireOnce()
 	
     Super::FireOnce();
 
+	int32 Random = FMath::RandRange(0, ShotSounds.Num() - 1);
+	UGameplayStatics::PlaySoundAtLocation(GetWorld(), ShotSounds[Random], GetMuzzleLocation());
     // 무기 메시에서 애니메이션 시퀀스를 직접 재생(ABP/몽타주 없이)
     if (Mesh && FireAnim)
     {
@@ -79,13 +81,6 @@ void AHitscanWeapon::FireOnce()
 			NiagaraComp->SetRelativeRotation(ShotVFXRotationOffset);
 		}
 	}
-	
-#if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
-	// DrawDebugLine(GetWorld(), TraceStart, ImpactPoint, bHit ? FColor::Red : FColor::Green, false, 1.0f, 0, 1.5f);
-	DrawDebugLine(GetWorld(), GetMuzzleLocation(), ImpactPoint, bHit ? FColor::Red : FColor::Green, false, 1.0f, 0, 1.5f);
-	DrawDebugSphere(GetWorld(),ImpactPoint, 10, 0, FColor::Yellow, false, 1.0f, 0);
-#endif
-
 	if (bHit && Hit.GetActor())
 	{
 		AActor* HitActor = Hit.GetActor();

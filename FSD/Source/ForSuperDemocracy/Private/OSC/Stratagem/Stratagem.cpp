@@ -8,6 +8,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraSystem.h"
+#include "Components/AudioComponent.h"
 #include "Kismet/GameplayStatics.h"
 
 // Sets default values
@@ -89,6 +90,8 @@ void AStratagem::StartFixingSequence(const FHitResult& ImpactResult)
 
 void AStratagem::AirRaid()
 {
+    AudioComp->Stop();
+    AudioComp->DestroyComponent();
     // 폭발 FX 스폰 (Cascade Particle System)
     if (ExplosionVFX)
     {
@@ -99,7 +102,11 @@ void AStratagem::AirRaid()
             GetActorRotation()
         );
     }
-
+    if (ExplosionSFX)
+    {
+        UGameplayStatics::PlaySoundAtLocation(GetWorld(), ExplosionSFX, GetActorLocation(), 2, 1, 0, Attenuation);
+    }
+    
     // 반경 데미지 적용: 반경 내 모든 Actor에 엔진 데미지 전파 → HealthComponent가 이를 수신해 처리
     TArray<AActor*> IgnoreActors;
     IgnoreActors.Add(this);
@@ -115,7 +122,7 @@ void AStratagem::AirRaid()
         InstigatorController,
         /*bDoFullDamage*/ true
     );
-    DrawDebugSphere(GetWorld(), GetActorLocation(), Radius, 10, FColor::Yellow, false, 1.0f, 0);
+    
     Destroy();
 }
 
@@ -140,6 +147,11 @@ void AStratagem::OnFixingFinished()
             FRotator::ZeroRotator,
             EAttachLocation::KeepRelativeOffset,
             /*bAutoDestroy*/ true);
+    }
+    if (LightSFX)
+    {
+        AudioComp = UGameplayStatics::SpawnSoundAtLocation(GetWorld(), LightSFX, GetActorLocation(), GetActorRotation(), 2, 1, 0, Attenuation);
+        AudioComp->Play(0);
     }
 }
 

@@ -37,7 +37,10 @@ protected:
     TObjectPtr<UNiagaraSystem> ShotVFX;
 
     // Optional rotation offset to align VFX forward with muzzle
-    UPROPERTY(EditDefaultsOnly, Category="Weapon|VFX")
+    UPROPERTY(EditDefaultsOnly, Category="Weapon|VFX")        
     FRotator ShotVFXRotationOffset = FRotator::ZeroRotator;
+
+    UPROPERTY(EditDefaultsOnly)
+    TArray<TObjectPtr<USoundBase>> ShotSounds;
 };
 

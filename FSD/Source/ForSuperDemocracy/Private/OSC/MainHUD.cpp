@@ -34,6 +34,7 @@ void AMainHUD::BeginPlay()
 		MC->OnObjectiveChanged.AddDynamic(this, &AMainHUD::OnMissionObjectiveChanged);
 		MC->OnObjectiveUpdated.AddDynamic(this, &AMainHUD::OnMissionObjectiveUpdate);
 		MC->OnTimerTick.AddDynamic(this, &AMainHUD::OnMissionTimerTick);
+		MC->OnMissionCompleted.AddDynamic(this, &AMainHUD::OnMissionComplete);
 		MC->StartMission();
 	}
 }
@@ -60,6 +61,14 @@ void AMainHUD::OnMissionObjectiveUpdate(int32 Curr, int32 Target)
 	if (Target == 0)
 		cnt = "";
 	MainUI->GetMissionWidget()->SetMissionSource(FText::FromString(cnt));
+}
+
+void AMainHUD::OnMissionComplete()
+{
+	if (MainUI)
+	{
+		MainUI->RemoveFromParent();
+	}
 }
 
 void AMainHUD::OnMissionTimerTick(int32 RemainSec)
