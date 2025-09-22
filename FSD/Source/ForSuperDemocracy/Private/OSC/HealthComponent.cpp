@@ -10,7 +10,6 @@
 #include "Components/PrimitiveComponent.h"
 #include "Engine/EngineTypes.h"
 #include "Components/SkeletalMeshComponent.h"
-#include "GameFramework/Character.h"
 #include "Components/CapsuleComponent.h"
 #include "TimerManager.h"
 
@@ -93,7 +92,12 @@ void UHealthComponent::HandleAnyDamage(AActor* DamagedActor, float Damage, const
 // 포인트 데미지(탄환 등) 콜백 → 내부 공통 처리로 위임
 void UHealthComponent::HandlePointDamage(AActor* DamagedActor, float Damage, AController* InstigatedBy, FVector HitLocation, UPrimitiveComponent* FHitComponent, FName BoneName, FVector ShotFromDirection, const UDamageType* DamageType, AActor* DamageCauser)
 {
-    ApplyDamageInternal(Damage, DamageCauser, InstigatedBy, DamageType);
+    if (HitParticle)
+    {
+        UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), HitParticle, HitLocation);
+    }
+   
+    ApplyDamageInternal(Damage, DamageCauser, InstigatedBy, DamageType);         
 }
 
 // 반경 데미지(폭발 등) 콜백 → 내부 공통 처리로 위임

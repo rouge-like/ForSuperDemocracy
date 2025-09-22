@@ -103,6 +103,9 @@ protected:
     UPROPERTY(Transient)
     FName PrevMeshCollisionProfileName;
     
+    UPROPERTY(EditDefaultsOnly)
+    TObjectPtr<UParticleSystem> HitParticle; 
+    
     // Store gravity scale to restore after ragdoll
     UPROPERTY(Transient)
     float PrevGravityScale = 1.0f;

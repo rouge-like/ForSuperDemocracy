@@ -38,5 +38,7 @@ public:
 	UFUNCTION()
 	void OnMissionObjectiveUpdate(int32 Curr, int32 Target);
 	UFUNCTION()
+	void OnMissionComplete();
+	UFUNCTION()
 	void OnMissionTimerTick(int32 RemainSec);
 };
