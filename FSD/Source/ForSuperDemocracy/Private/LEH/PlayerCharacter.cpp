@@ -3,10 +3,12 @@
 
 #include "LEH/PlayerCharacter.h"
 
+#include "Blueprint/UserWidget.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "LEH/DamageWidget.h"
 #include "LEH/PlayerAnimInstance.h"
 #include "LEH/PlayerFSM.h"
 #include "LEH/SuperPlayerController.h"
@@ -50,7 +52,6 @@ APlayerCharacter::APlayerCharacter()
 	
 	// Default weapon settings
 	ViewCurrentWeapon(true);
-	
 }
 
 // Called when the game starts or when spawned
@@ -78,6 +79,11 @@ void APlayerCharacter::BeginPlay()
 	if (WeaponComp)
 	{
 		WeaponComp->OnWeaponFired.AddDynamic(this, &APlayerCharacter::OnWeaponFired);
+	}
+
+	if (DamageWidgetClass)
+	{
+		DamageWidget = CreateWidget<UDamageWidget>(GetWorld(), DamageWidgetClass);
 	}
 }
 
@@ -203,11 +209,29 @@ void APlayerCharacter::OnDamaged(float Damage, AActor* DamageCauser, AController
 	IsPlayingDamageAnim = true;
 	
 	FSMComp->SetPlayerState(EPlayerState::Damage);
+
+	DamageWidget->AddToViewport();
+	DamageWidget->PlayFadeIn();
+
+	GetWorldTimerManager().ClearTimer(WidgetOffHandle);
 	
 	GetWorldTimerManager().SetTimer(DamageTimerHandle, FTimerDelegate::CreateLambda([&]
 	{
 		FSMComp->SetPlayerState(FSMComp->GetPreviousPlayerState());
 		IsPlayingDamageAnim = false;
+
+		DamageWidgetOff();
+		
+	}), 0.7f, false);
+}
+
+void APlayerCharacter::DamageWidgetOff()
+{
+	DamageWidget->PlayFadeOut();
+	
+	GetWorldTimerManager().SetTimer(WidgetOffHandle, FTimerDelegate::CreateLambda([&]
+	{
+		DamageWidget->RemoveFromParent();
 		
 	}), 0.5f, false);
 }

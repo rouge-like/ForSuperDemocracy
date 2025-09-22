@@ -68,6 +68,13 @@ public:
 	
 public:
 	// Damage
+	// Damage widget
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = UI)
+	TSubclassOf<class UUserWidget> DamageWidgetClass;
+	
+	UPROPERTY()
+	class UDamageWidget* DamageWidget;
+	
 	bool IsPlayingDamageAnim = false;
 	
 	FTimerHandle DamageTimerHandle;
@@ -75,6 +82,9 @@ public:
 	UFUNCTION()
 	void OnDamaged(float Damage, AActor* DamageCauser, AController* EventInstigator, TSubclassOf<UDamageType> DamageType);
 
+	FTimerHandle WidgetOffHandle;
+	void DamageWidgetOff();
+	
 public:
 	UFUNCTION()
 	void OnDeath(AActor* Victim);
