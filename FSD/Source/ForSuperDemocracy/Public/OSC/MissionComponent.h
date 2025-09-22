@@ -1,4 +1,4 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
+// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -75,6 +75,9 @@ public:
     UFUNCTION(BlueprintPure, Category = "Mission")
     EMissionState GetState() const { return State; }
 
+    UFUNCTION(BlueprintPure, Category = "Mission")
+    TArray<FVector> GetActiveObjectiveLocations() const;
+
     // 델리게이트
     UPROPERTY(BlueprintAssignable, Category = "Mission|Event")
     FOnObjectiveChanged OnObjectiveChanged;
@@ -123,5 +126,11 @@ protected:
     UPROPERTY(Transient)
     TSet<TWeakObjectPtr<AActor>> CountedActors;
 
+    UPROPERTY(Transient)
+    TArray<TWeakObjectPtr<AActor>> ActiveObjectiveActors;
+
+    void CacheObjectiveTargets(const FMissionObjective& Objective);
+
     FTimerHandle TimerHandle_1Hz;
 };
+

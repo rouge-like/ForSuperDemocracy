@@ -45,6 +45,10 @@ void AGrenade::Explode()
             GetActorRotation()
         );
     }
+    if (ExplosionSFX)
+    {
+        UGameplayStatics::PlaySoundAtLocation(GetWorld(), ExplosionSFX, GetActorLocation(),2,1,0, Attenuation);
+    }
 
     // 반경 데미지 적용: 반경 내 모든 Actor에 엔진 데미지 전파 → HealthComponent가 이를 수신해 처리
     TArray<AActor*> IgnoreActors;
@@ -61,7 +65,7 @@ void AGrenade::Explode()
         InstigatorController,
         /*bDoFullDamage*/ true
     );
-    DrawDebugSphere(GetWorld(), GetActorLocation(), Radius, 10, FColor::Yellow, false, 1.0f, 0);
+
     Destroy();
 }
 

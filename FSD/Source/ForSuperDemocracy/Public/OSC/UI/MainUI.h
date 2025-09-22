@@ -9,6 +9,7 @@
 class UMissionWidget;
 class UWeaponWidget;
 class UHealthWidget;
+class UCompassWidget;
 /**
  * 
  */
@@ -27,6 +28,9 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UMissionWidget> MissionWidget;
 
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UCompassWidget> CompassWidget;
+	
 public:
 	UFUNCTION(BlueprintCallable)
 	UWeaponWidget* GetWeaponWidget(){ return WeaponWidget; }
@@ -34,4 +38,6 @@ public:
 	UHealthWidget* GetHealthWidget(){ return HealthWidget; }
 	UFUNCTION(BlueprintCallable)
 	UMissionWidget* GetMissionWidget(){ return MissionWidget; }
+	UFUNCTION(BlueprintCallable)
+	UCompassWidget* GetCompassWidget(){ return CompassWidget; }
 };

@@ -7,6 +7,7 @@
 #include "OSC/MissionData.h"
 #include "OSC/MainMode.h"
 #include "OSC/MissionComponent.h"
+#include "OSC/UI/CompassWidget.h"
 #include "OSC/UI/MissionWidget.h"
 
 void AMainHUD::BeginPlay()
@@ -25,9 +26,15 @@ void AMainHUD::BeginPlay()
 	if (auto* GM = GetWorld()->GetAuthGameMode<AMainMode>())
 	{
 		auto* MC = GM->GetMissionComponent();
+		if (MainUI && MainUI->GetCompassWidget())
+		{
+			MainUI->GetCompassWidget()->InitializeCompass(MC);
+		}
+
 		MC->OnObjectiveChanged.AddDynamic(this, &AMainHUD::OnMissionObjectiveChanged);
 		MC->OnObjectiveUpdated.AddDynamic(this, &AMainHUD::OnMissionObjectiveUpdate);
 		MC->OnTimerTick.AddDynamic(this, &AMainHUD::OnMissionTimerTick);
+		MC->OnMissionCompleted.AddDynamic(this, &AMainHUD::OnMissionComplete);
 		MC->StartMission();
 	}
 }
@@ -54,6 +61,14 @@ void AMainHUD::OnMissionObjectiveUpdate(int32 Curr, int32 Target)
 	if (Target == 0)
 		cnt = "";
 	MainUI->GetMissionWidget()->SetMissionSource(FText::FromString(cnt));
+}
+
+void AMainHUD::OnMissionComplete()
+{
+	if (MainUI)
+	{
+		MainUI->RemoveFromParent();
+	}
 }
 
 void AMainHUD::OnMissionTimerTick(int32 RemainSec)

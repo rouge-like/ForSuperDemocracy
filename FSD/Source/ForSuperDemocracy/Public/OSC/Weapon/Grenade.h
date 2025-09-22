@@ -38,7 +38,12 @@ protected:
 	// 폭발 이펙트
 	UPROPERTY(EditDefaultsOnly, Category="Grenade")
 	TObjectPtr<UNiagaraSystem> ExplosionVFX;
-
+	
+	UPROPERTY(EditDefaultsOnly, Category="Grenade")
+	TObjectPtr<USoundBase> ExplosionSFX;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Grenade")
+	TObjectPtr<USoundAttenuation> Attenuation;
     UFUNCTION()
     void Explode();
 public:	

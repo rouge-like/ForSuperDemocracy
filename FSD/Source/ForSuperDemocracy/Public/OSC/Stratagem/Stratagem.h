@@ -41,12 +41,24 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Stratagem|Animation")
 	TObjectPtr<UAnimSequenceBase> FixedAnim;
-
+	
 	UPROPERTY(EditDefaultsOnly, Category="Stratagem|VFX")
 	TObjectPtr<UNiagaraSystem> LightVFX;
 	
+	UPROPERTY(EditDefaultsOnly, Category="Stratagem|SFX")
+	TObjectPtr<USoundBase> LightSFX;
+		
 	UPROPERTY(EditDefaultsOnly, Category="Stratagem|VFX")
 	TObjectPtr<UNiagaraSystem> ExplosionVFX;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Stratagem|SFX")
+	TObjectPtr<USoundBase> ExplosionSFX;;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Stratagem|SFX")
+	TObjectPtr<USoundAttenuation> Attenuation;
+
+	UPROPERTY()
+	UAudioComponent* AudioComp;
 	// 고정 상태 여부 (중복 처리 방지)
 	bool bHasLandedAndFixingStarted = false;
 
