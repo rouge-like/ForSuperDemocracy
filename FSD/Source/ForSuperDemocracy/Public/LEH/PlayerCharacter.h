@@ -68,11 +68,21 @@ public:
 	
 public:
 	// Damage
+	// Damage widget
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = UI)
+	TSubclassOf<class UUserWidget> DamageWidgetClass;
+	
+	UPROPERTY()
+	class UDamageWidget* DamageWidget;
+	
 	FTimerHandle DamageTimerHandle;
 	
 	UFUNCTION()
 	void OnDamaged(float Damage, AActor* DamageCauser, AController* EventInstigator, TSubclassOf<UDamageType> DamageType);
 
+	FTimerHandle WidgetOffHandle;
+	void DamageWidgetOff();
+	
 public:
 	UFUNCTION()
 	void OnDeath(AActor* Victim);
@@ -135,9 +145,7 @@ public:
 	// Fire
 	UFUNCTION()
 	void OnWeaponFired(AWeaponBase* Weapon);
-
-
-
+	
     // Camera recoil (kickback)
     UFUNCTION(BlueprintCallable, Category=Recoil)
     void ApplyCameraKick(AWeaponBase* Weapon);
@@ -151,6 +159,7 @@ protected:
     float CurrentCameraKick = 0.f; // 누적 킥백(cm)
 
     float DefaultArmLength = 0.f; // BeginPlay에서 초기화
+	
 public:
 	// Montage
 	void PlayReloadMontage();
@@ -166,4 +175,20 @@ public:
 	
 	void PlayThrowMontage();
 	void StopThrowMontage();
+
+	FVector RespawnPoint;
+
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<class AHellPod> HellPod;
+	UFUNCTION()
+	void SpawnHellPod();
+public:
+	// Respawn
+	UPROPERTY(EditDefaultsOnly, Category=Respawn)
+	FVector RespawnOffset = FVector(0.f, -500.f, 0.f);
+	
+	void RespawnPlayer(FVector NewRespawnPoint);
+	void SetPlayerToDefault();
+
+	bool bDamage;
 };

@@ -48,7 +48,7 @@ public:
 
     UFUNCTION(BlueprintPure, Category="Health")
     float GetHealthPercent() const { return MaxHealth > 0.f ? CurrentHealth / MaxHealth : 0.f; } // 체력 비율(0~1)
-
+    
     // 델리게이트 이벤트
     UPROPERTY(BlueprintAssignable, Category="Health|Event")
     FOnHealthChanged OnHealthChanged;
@@ -111,6 +111,8 @@ protected:
     float PrevGravityScale = 1.0f;
 
     UFUNCTION()
+    void OnRagdoll();
+    UFUNCTION()
     void RecoverFromRagdoll();
 
     // Capsule ↔ Mesh sync while ragdolled (for camera/actor cohesion)
@@ -134,4 +136,7 @@ protected:
 
     UPROPERTY(Transient)
     FTransform SavedMeshRelativeTransform;
+
+public:
+    void ResetHealth();
 };

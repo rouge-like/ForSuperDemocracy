@@ -3,10 +3,14 @@
 
 #include "LEH/PlayerCharacter.h"
 
+#include "Blueprint/UserWidget.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "LEH/DamageWidget.h"
+#include "LEH/HellPod.h"
 #include "LEH/PlayerAnimInstance.h"
 #include "LEH/PlayerFSM.h"
 #include "LEH/SuperPlayerController.h"
@@ -50,7 +54,6 @@ APlayerCharacter::APlayerCharacter()
 	
 	// Default weapon settings
 	ViewCurrentWeapon(true);
-	
 }
 
 // Called when the game starts or when spawned
@@ -72,12 +75,18 @@ void APlayerCharacter::BeginPlay()
 	if (HealthComp)
 	{
 		HealthComp->OnDamaged.AddDynamic(this, &APlayerCharacter::OnDamaged);
-		//HealthComp->OnDeath.AddDynamic(this, &APlayerCharacter::OnDeath);
+		HealthComp->OnDeath.AddDynamic(this, &APlayerCharacter::OnDeath);
 	}
 
 	if (WeaponComp)
 	{
 		WeaponComp->OnWeaponFired.AddDynamic(this, &APlayerCharacter::OnWeaponFired);
+	}
+
+	if (DamageWidgetClass)
+	{
+		DamageWidget = CreateWidget<UDamageWidget>(GetWorld(), DamageWidgetClass);
+		DamageWidget->AddToViewport(-1);
 	}
 }
 
@@ -85,7 +94,7 @@ void APlayerCharacter::BeginPlay()
 void APlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
+	
 	if (bIsZooming)
 	{
 		CurrentLerpAlpha1 = FMath::Clamp(CurrentLerpAlpha1+DeltaTime*LerpSpeed, 0.0f, 1.0f);
@@ -194,31 +203,50 @@ void APlayerCharacter::ViewCurrentWeapon(bool Visibility)
 void APlayerCharacter::OnDamaged(float Damage, AActor* DamageCauser, AController* EventInstigator,
                                  TSubclassOf<UDamageType> DamageType)
 {
-	// 뭘 넣어야해?
-	// 데미지 받았을 때 뭘 할거야?
-	// 1. 피격 애니메이션 재생
-	if(FSMComp->GetPlayerState() == EPlayerState::Damage || FSMComp->GetPlayerState() == EPlayerState::Dead)
-	{
-		return;
-	}
-	
-	FSMComp->SetPlayerState(EPlayerState::Damage);
+	// Dead 시 OnDamaged 호출 안됨
+	// if(IsPlayingDamageAnim)
+	// {
+	// 	return;
+	// }
 
-	UE_LOG(LogTemp, Warning, TEXT("DamageStart"));
+	bDamage  = true;
+	
+	//DamageWidget->AddToViewport();
+	DamageWidget->PlayFadeIn();
+
+	GetWorldTimerManager().ClearTimer(WidgetOffHandle);
 	
 	GetWorldTimerManager().SetTimer(DamageTimerHandle, FTimerDelegate::CreateLambda([&]
 	{
-		FSMComp->SetPlayerState(EPlayerState::Move);
-		UE_LOG(LogTemp, Warning, TEXT("DamageEnd"));
-		// FSMComp->GetPreviousPlayerState() 이거 문제있는듯
+		bDamage = false;
+
+		DamageWidgetOff();
 		
-	}), 1.f, false);
+	}), 0.7f, false);
+}
+
+void APlayerCharacter::DamageWidgetOff()
+{
+	DamageWidget->PlayFadeOut();
+	
 }
 
 void APlayerCharacter::OnDeath(AActor* Victim)
 {
-	GetWorldTimerManager().ClearTimer(DamageTimerHandle);
+	if (FSMComp->GetPlayerState() == EPlayerState::Prone)
+	{
+		StartCameraProne(false);
+	}
+	
 	FSMComp->SetPlayerState(EPlayerState::Dead);
+
+	GetCharacterMovement()->SetMovementMode(MOVE_None);
+	
+	FVector DeadPoint = GetActorLocation();
+	RespawnPoint = DeadPoint;
+
+	FTimerHandle SpawnTimer;
+	GetWorldTimerManager().SetTimer(SpawnTimer,this, &APlayerCharacter::SpawnHellPod, 5.f, false);
 }
 
 
@@ -262,12 +290,12 @@ void APlayerCharacter::StartCameraProne(bool IsProning)
 
 	FTimerHandle TimerHandle;
 
-	// prone <-> idle/move 사이 움직일 텀 필요
+	// Prone start/end동안 잠깐 멈춤
 	GetCharacterMovement()->SetMovementMode(MOVE_None);
 	GetWorldTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda([&]
 	{
 		GetCharacterMovement()->SetMovementMode(MOVE_Walking);
-	}), 0.1f, false);
+	}), 0.8f, false);
 	
 	if (IsProning)
 	{
@@ -391,6 +419,31 @@ void APlayerCharacter::StopThrowMontage()
 {
 	GetWorldTimerManager().ClearTimer(ThrowAimTimerHandle);
 	bStartThrowAim = true;
+}
+
+void APlayerCharacter::SpawnHellPod()
+{
+	GetWorld()->SpawnActor<AHellPod>(HellPod, RespawnPoint + FVector(0,0,5000), FRotator::ZeroRotator);
+}
+
+void APlayerCharacter::RespawnPlayer(FVector NewRespawnPoint)
+{
+	FVector Offset = FVector(0, 0, 400.f);
+	FVector FinalPointToSpawn = NewRespawnPoint + Offset;
+
+	GetCharacterMovement()->SetMovementMode(MOVE_None);
+	SetActorLocation(FinalPointToSpawn);
+	
+	SetPlayerToDefault();
+}
+
+void APlayerCharacter::SetPlayerToDefault()
+{
+	HealthComp->ResetHealth();
+	FSMComp->SetPlayerState(EPlayerState::Idle);
+	GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+	
+	// DamageWidget->RemoveFromParent();
 }
 
 

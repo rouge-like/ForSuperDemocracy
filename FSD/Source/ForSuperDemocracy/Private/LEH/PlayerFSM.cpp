@@ -28,7 +28,7 @@ void UPlayerFSM::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompo
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	GEngine->AddOnScreenDebugMessage(0, 1, FColor::Cyan, UEnum::GetValueAsString(_State));
+	//GEngine->AddOnScreenDebugMessage(0, 1, FColor::Cyan, UEnum::GetValueAsString(_State));
 	
 }
 
@@ -45,9 +45,11 @@ void UPlayerFSM::SetPlayerState(EPlayerState NewState)
 	}
 	
 	// 바꾸기 전 상태 저장
+
 	PreviousState = _State;
-	
 	_State = NewState;
+
+	//UE_LOG(LogTemp, Warning, TEXT("Prev : %s, Cur : %s"), *UEnum::GetValueAsString(PreviousState),*UEnum::GetValueAsString(_State));
 }
 
 EPlayerState UPlayerFSM::GetPreviousPlayerState()

@@ -133,5 +133,7 @@ public:
 	class UInputAction* Weapon3Action;
 	
 	void EquipStratagem(const FInputActionValue& Value);
-	
+
+	UFUNCTION()
+	void OnDead(AActor* Victim);
 };

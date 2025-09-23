@@ -12,6 +12,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "TimerManager.h"
+#include "GameFramework/SpringArmComponent.h"
 
 // 컴포넌트 기본값 설정(틱 활성화 등)
 UHealthComponent::UHealthComponent()
@@ -116,7 +117,6 @@ void UHealthComponent::HandleRadialDamage(AActor* DamagedActor, float Damage, co
     {
         return;
     }
-
     USkeletalMeshComponent* Mesh = nullptr;
     if (ACharacter* Char = Cast<ACharacter>(Owner))
     {
@@ -131,59 +131,7 @@ void UHealthComponent::HandleRadialDamage(AActor* DamagedActor, float Damage, co
         return;
     }
 
-    // PhysicsAsset이 없으면 물리 시뮬레이션 불가
-    if (!Mesh->GetPhysicsAsset())
-    {
-        return;
-    }
-
-    // 래그돌 활성화(최소 설정)
-    if (!Mesh->IsSimulatingPhysics())
-    {
-        PrevMeshCollisionProfileName = Mesh->GetCollisionProfileName();
-
-        // Detach mesh from capsule to avoid parent influence during ragdoll
-        if (ACharacter* CharOwner = Cast<ACharacter>(Owner))
-        {
-            SavedMeshRelativeTransform = Mesh->GetRelativeTransform();
-            Mesh->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
-            bDetachedMeshDuringRagdoll = true;
-        }
-        Mesh->SetCollisionProfileName(TEXT("Ragdoll"));
-        Mesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-        Mesh->SetSimulatePhysics(true);
-        Mesh->SetAllBodiesSimulatePhysics(true);
-        Mesh->WakeAllRigidBodies();
-        bIsRagdolling = true;
-
-        // 캡슐 콜리전 비활성 + 이동 정지/불가 처리 (Character에 한함)
-        if (ACharacter* Char = Cast<ACharacter>(Owner))
-        {
-            if (UCapsuleComponent* Capsule = Char->GetCapsuleComponent())
-            {
-                Capsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-                Capsule->SetEnableGravity(false);
-            }
-            if (UCharacterMovementComponent* MoveComp = Char->GetCharacterMovement())
-            {
-                MoveComp->StopMovementImmediately();
-                PrevGravityScale = MoveComp->GravityScale;
-                MoveComp->GravityScale = 0.f;
-                MoveComp->SetMovementMode(MOVE_None);
-            }
-        }
-
-        // Broadcast ragdoll start for external systems (e.g., camera follow)
-        OnRagdollStart.Broadcast(Owner);
-
-        // 일정 시간 후 간단 복귀
-        if (RagdollRecoverTime > 0.f)
-        {
-            FTimerHandle Handle;
-            GetWorld()->GetTimerManager().SetTimer(Handle, this, &UHealthComponent::RecoverFromRagdoll, RagdollRecoverTime, false);
-        }
-    }
-
+    OnRagdoll();
     // 데미지 비례 임펄스 적용 (Origin 반대 방향으로 가속 변화)
     FVector Dir = Mesh->GetComponentLocation() - Origin - FVector(0,0,500.f);
     if (!Dir.IsNearlyZero())
@@ -231,8 +179,84 @@ void UHealthComponent::UpdateCapsuleFollowRagdoll(float /*DeltaTime*/)
     }
 }
 
+void UHealthComponent::OnRagdoll()
+{
+    AActor* Owner = GetOwner();
+    if (!Owner)
+    {
+        return;
+    }
+    USkeletalMeshComponent* Mesh = nullptr;
+    if (ACharacter* Char = Cast<ACharacter>(Owner))
+    {
+        Mesh = Char->GetMesh();
+    }
+    if (!Mesh)
+    {
+        Mesh = Cast<USkeletalMeshComponent>(Owner->GetComponentByClass(USkeletalMeshComponent::StaticClass()));
+    }
+    if (!Mesh)
+    {
+        return;
+    }
+
+    // 래그돌 활성화(최소 설정)
+    if (!Mesh->IsSimulatingPhysics())
+    {
+        PrevMeshCollisionProfileName = Mesh->GetCollisionProfileName();
+
+        // Detach mesh from capsule to avoid parent influence during ragdoll
+        if (ACharacter* CharOwner = Cast<ACharacter>(Owner))
+        {
+            SavedMeshRelativeTransform = Mesh->GetRelativeTransform();
+            Mesh->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+            bDetachedMeshDuringRagdoll = true;
+        }
+        Mesh->SetCollisionProfileName(TEXT("Ragdoll"));
+        Mesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+        Mesh->SetSimulatePhysics(true);
+        Mesh->SetAllBodiesSimulatePhysics(true);
+        Mesh->WakeAllRigidBodies();
+        bIsRagdolling = true;
+
+        // 캡슐 콜리전 비활성 + 이동 정지/불가 처리 (Character에 한함)
+        if (ACharacter* Char = Cast<ACharacter>(Owner))
+        {
+            if (UCapsuleComponent* Capsule = Char->GetCapsuleComponent())
+            {
+                Capsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+                Capsule->SetEnableGravity(false);
+            }
+            if (UCharacterMovementComponent* MoveComp = Char->GetCharacterMovement())
+            {
+                MoveComp->StopMovementImmediately();
+                PrevGravityScale = MoveComp->GravityScale;
+                MoveComp->GravityScale = 0.f;
+                MoveComp->SetMovementMode(MOVE_None);
+            }
+            if (USpringArmComponent* SpringArm = Cast<USpringArmComponent>(Char->GetComponentByClass(USpringArmComponent::StaticClass())))
+            {
+                SpringArm->TargetOffset *= 2;
+            }
+        }
+
+        // Broadcast ragdoll start for external systems (e.g., camera follow)
+        OnRagdollStart.Broadcast(Owner);
+
+        // 일정 시간 후 간단 복귀
+        if (RagdollRecoverTime > 0.f)
+        {
+            FTimerHandle Handle;
+            GetWorld()->GetTimerManager().SetTimer(Handle, this, &UHealthComponent::RecoverFromRagdoll, RagdollRecoverTime, false);
+        }
+    }
+}
+
 void UHealthComponent::RecoverFromRagdoll()
 {
+    if (CurrentHealth <= 0.f)
+        return;
+    
     AActor* Owner = GetOwner();
     if (!Owner)
     {
@@ -243,6 +267,10 @@ void UHealthComponent::RecoverFromRagdoll()
     if (ACharacter* Char = Cast<ACharacter>(Owner))
     {
         Mesh = Char->GetMesh();
+        if (USpringArmComponent* SpringArm = Cast<USpringArmComponent>(Char->GetComponentByClass(USpringArmComponent::StaticClass())))
+        {
+            SpringArm->TargetOffset /= 2;
+        }
     }
     if (!Mesh)
     {
@@ -304,7 +332,8 @@ void UHealthComponent::RecoverFromRagdoll()
             bDetachedMeshDuringRagdoll = false;
         }
     }
-
+    
+    
     // Broadcast ragdoll end for external systems (e.g., camera follow)
     OnRagdollEnd.Broadcast(Owner);
 }
@@ -327,8 +356,14 @@ void UHealthComponent::ApplyDamageInternal(float Damage, AActor* DamageCauser, A
     if (CurrentHealth <= 0.f && bCanDie)
     {
         OnDeath.Broadcast(GetOwner());
-        if(GEngine) GEngine->AddOnScreenDebugMessage(3, 1.5f, FColor::Green, FString::Printf(TEXT("%s DEAD"), *GetOwner()->GetActorNameOrLabel()));
+        OnRagdoll();
     }
 
-    if(GEngine) GEngine->AddOnScreenDebugMessage(2, 1.5f, FColor::Green, FString::Printf(TEXT("%s HP %.f / %.f"), *GetOwner()->GetActorNameOrLabel(), CurrentHealth, MaxHealth)); // 디버그: 현재 HP 출력
+}
+
+void UHealthComponent::ResetHealth()
+{
+    CurrentHealth = MaxHealth;
+    OnHealthChanged.Broadcast(MaxHealth, CurrentHealth);
+    RecoverFromRagdoll();
 }

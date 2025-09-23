@@ -9,6 +9,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "LEH/PlayerCharacter.h"
 #include "LEH/PlayerFSM.h"
+#include "OSC/HealthComponent.h"
 #include "OSC/Weapon/WeaponComponent.h"
 
 void ASuperPlayerController::BeginPlay()
@@ -39,6 +40,12 @@ void ASuperPlayerController::BeginPlay()
 	if (CrossHairWidgetClass)
 	{
 		CrossHairWidget = CreateWidget<UUserWidget>(this, CrossHairWidgetClass);
+	}
+	UHealthComponent* HealthComp = GetPawn()->FindComponentByClass<UHealthComponent>();
+	
+	if (HealthComp)
+	{
+		HealthComp->OnDeath.AddDynamic(this, &ASuperPlayerController::OnDead);
 	}
 }
 
@@ -85,6 +92,10 @@ void ASuperPlayerController::SetupInputComponent()
 
 void ASuperPlayerController::Move(const FInputActionValue& Value)
 {
+	if (FSM->GetPlayerState() != EPlayerState::Move)
+	{
+		return;
+	}
 	FVector2D Input = Value.Get<FVector2D>();
 	
 	// 1. 컨트롤러 회전 (카메라 기준)
@@ -104,6 +115,8 @@ void ASuperPlayerController::Move(const FInputActionValue& Value)
 
 void ASuperPlayerController::MoveStart(const FInputActionValue& Value)
 {
+	if (FSM->GetPlayerState() == EPlayerState::Dead) return;
+	
 	if (FSM->GetPlayerState() == EPlayerState::Prone)
 	{
 		return;
@@ -114,10 +127,7 @@ void ASuperPlayerController::MoveStart(const FInputActionValue& Value)
 
 void ASuperPlayerController::MoveEnd(const FInputActionValue& Value)
 {
-	if (FSM->GetPlayerState() == EPlayerState::Prone)
-	{
-		return;
-	}
+	if (FSM->GetPlayerState() != EPlayerState::Move) return;
 	
 	FSM->SetPlayerState(EPlayerState::Idle);
 }
@@ -132,6 +142,8 @@ void ASuperPlayerController::Look(const FInputActionValue& Value)
 
 void ASuperPlayerController::SprintStart(const FInputActionValue& Value)
 {
+	if (FSM->GetPlayerState() == EPlayerState::Dead) return;
+	
 	if (bIsAiming || bIsReloading || FSM->GetPlayerState() == EPlayerState::Prone)
 	{
 		return;
@@ -142,6 +154,8 @@ void ASuperPlayerController::SprintStart(const FInputActionValue& Value)
 
 void ASuperPlayerController::SprintEnd(const FInputActionValue& Value)
 {
+	if (FSM->GetPlayerState() == EPlayerState::Dead) return;
+	
 	if (bIsAiming || bIsReloading || FSM->GetPlayerState() == EPlayerState::Prone)
 	{
 		return;
@@ -152,6 +166,8 @@ void ASuperPlayerController::SprintEnd(const FInputActionValue& Value)
 
 void ASuperPlayerController::AimingStart(const FInputActionValue& Value)
 {
+	if (FSM->GetPlayerState() == EPlayerState::Dead) return;
+	
 	if (bIsReloading || bIsAiming || PlayerCharacter->bIsPlayerSalute)
 	{
 		return;
@@ -188,8 +204,6 @@ void ASuperPlayerController::AimingEnd(const FInputActionValue& Value)
 		return;
 	}
 	
-	
-	
 	bIsAiming = false;
 	PlayerCharacter->bIsPlayerAiming = false;
 	PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed *= 2.f;
@@ -214,6 +228,8 @@ void ASuperPlayerController::CrossHairWidgetOn()
 
 void ASuperPlayerController::FireStart(const FInputActionValue& Value)
 {
+	if (FSM->GetPlayerState() == EPlayerState::Dead) return;
+	
 	if (bIsAiming)
 	{
 		if (IsValid(WeaponComp))
@@ -234,6 +250,8 @@ void ASuperPlayerController::FireEnd(const FInputActionValue& Value)
 
 void ASuperPlayerController::Reload(const FInputActionValue& Value)
 {
+	if (FSM->GetPlayerState() == EPlayerState::Dead) return;
+	
 	// salute 중이었으면 다시 손에 무기 들려주기
 	if (FSM->GetPreviousPlayerState() == EPlayerState::Salute)
 	{
@@ -261,6 +279,8 @@ void ASuperPlayerController::Reload(const FInputActionValue& Value)
 
 void ASuperPlayerController::Prone(const FInputActionValue& Value)
 {
+	if (FSM->GetPlayerState() == EPlayerState::Dead) return;
+	
 	if (FSM->GetPlayerState() != EPlayerState::Prone)
 	{
 		FSM->SetPlayerState(EPlayerState::Prone);
@@ -270,13 +290,7 @@ void ASuperPlayerController::Prone(const FInputActionValue& Value)
 	}
 	else
 	{
-		FTimerHandle TimerHandle;
-		GetWorldTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda([&]
-		{
-			float CurrentSpeed = PlayerCharacter->GetCharacterMovement()->Velocity.Length();
-			FSM->SetPlayerState(CurrentSpeed > 0 ? EPlayerState::Move : EPlayerState::Idle);
-
-		}), 0.11f, false);
+		FSM->SetPlayerState(EPlayerState::Idle);
 		
 		PlayerCharacter->StartCameraProne(false);
 		PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
@@ -285,12 +299,16 @@ void ASuperPlayerController::Prone(const FInputActionValue& Value)
 
 void ASuperPlayerController::Salute(const FInputActionValue& Value)
 {
+	if (FSM->GetPlayerState() == EPlayerState::Dead) return;
+	
 	FSM->SetPlayerState(EPlayerState::Salute);
 	PlayerCharacter->PlaySaluteMontage();
 }
 
 void ASuperPlayerController::EquipRifle(const FInputActionValue& Value)
 {
+	if (FSM->GetPlayerState() == EPlayerState::Dead) return;
+	
 	if (PlayerCharacter->GetCurrentWeaponIdx() == 0)
 	{
 		return;
@@ -309,6 +327,8 @@ void ASuperPlayerController::EquipRifle(const FInputActionValue& Value)
 
 void ASuperPlayerController::EquipGrenade(const FInputActionValue& Value)
 {
+	if (FSM->GetPlayerState() == EPlayerState::Dead) return;
+	
 	if (PlayerCharacter->GetCurrentWeaponIdx() == 1)
 	{
 		return;
@@ -325,6 +345,8 @@ void ASuperPlayerController::EquipGrenade(const FInputActionValue& Value)
 
 void ASuperPlayerController::EquipStratagem(const FInputActionValue& Value)
 {
+	if (FSM->GetPlayerState() == EPlayerState::Dead) return;
+	
 	if (PlayerCharacter->GetCurrentWeaponIdx() == 2)
 	{
 		return;
@@ -337,4 +359,10 @@ void ASuperPlayerController::EquipStratagem(const FInputActionValue& Value)
 	PlayerCharacter->ChildActor->SetVisibility(false);
 	PlayerCharacter->ChildActor1->SetVisibility(false);
 	PlayerCharacter->ChildActor2->SetVisibility(true);
+}
+
+void ASuperPlayerController::OnDead(AActor* Victim)
+{
+	AimingEnd(0);
+	FireEnd(0);
 }
