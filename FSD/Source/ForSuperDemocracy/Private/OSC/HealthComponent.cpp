@@ -340,3 +340,9 @@ void UHealthComponent::ApplyDamageInternal(float Damage, AActor* DamageCauser, A
     }
 
 }
+
+void UHealthComponent::ResetHealth()
+{
+    CurrentHealth = MaxHealth;
+    OnHealthChanged.Broadcast(MaxHealth, CurrentHealth);
+}

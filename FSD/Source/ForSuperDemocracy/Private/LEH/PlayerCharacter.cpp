@@ -3,10 +3,12 @@
 
 #include "LEH/PlayerCharacter.h"
 
+#include "Blueprint/UserWidget.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "LEH/DamageWidget.h"
 #include "LEH/PlayerAnimInstance.h"
 #include "LEH/PlayerFSM.h"
 #include "LEH/SuperPlayerController.h"
@@ -50,7 +52,6 @@ APlayerCharacter::APlayerCharacter()
 	
 	// Default weapon settings
 	ViewCurrentWeapon(true);
-	
 }
 
 // Called when the game starts or when spawned
@@ -72,12 +73,17 @@ void APlayerCharacter::BeginPlay()
 	if (HealthComp)
 	{
 		HealthComp->OnDamaged.AddDynamic(this, &APlayerCharacter::OnDamaged);
-		//HealthComp->OnDeath.AddDynamic(this, &APlayerCharacter::OnDeath);
+		HealthComp->OnDeath.AddDynamic(this, &APlayerCharacter::OnDeath);
 	}
 
 	if (WeaponComp)
 	{
 		WeaponComp->OnWeaponFired.AddDynamic(this, &APlayerCharacter::OnWeaponFired);
+	}
+
+	if (DamageWidgetClass)
+	{
+		DamageWidget = CreateWidget<UDamageWidget>(GetWorld(), DamageWidgetClass);
 	}
 }
 
@@ -194,31 +200,53 @@ void APlayerCharacter::ViewCurrentWeapon(bool Visibility)
 void APlayerCharacter::OnDamaged(float Damage, AActor* DamageCauser, AController* EventInstigator,
                                  TSubclassOf<UDamageType> DamageType)
 {
-	// 뭘 넣어야해?
-	// 데미지 받았을 때 뭘 할거야?
-	// 1. 피격 애니메이션 재생
-	if(FSMComp->GetPlayerState() == EPlayerState::Damage || FSMComp->GetPlayerState() == EPlayerState::Dead)
+	// Dead 시 OnDamaged 호출 안됨
+	if(IsPlayingDamageAnim)
 	{
 		return;
 	}
+
+	IsPlayingDamageAnim = true;
 	
 	FSMComp->SetPlayerState(EPlayerState::Damage);
 
-	UE_LOG(LogTemp, Warning, TEXT("DamageStart"));
+	DamageWidget->AddToViewport();
+	DamageWidget->PlayFadeIn();
+
+	GetWorldTimerManager().ClearTimer(WidgetOffHandle);
 	
 	GetWorldTimerManager().SetTimer(DamageTimerHandle, FTimerDelegate::CreateLambda([&]
 	{
-		FSMComp->SetPlayerState(EPlayerState::Move);
-		UE_LOG(LogTemp, Warning, TEXT("DamageEnd"));
-		// FSMComp->GetPreviousPlayerState() 이거 문제있는듯
+		FSMComp->SetPlayerState(FSMComp->GetPreviousPlayerState());
+		IsPlayingDamageAnim = false;
+
+		DamageWidgetOff();
 		
-	}), 1.f, false);
+	}), 0.7f, false);
+}
+
+void APlayerCharacter::DamageWidgetOff()
+{
+	DamageWidget->PlayFadeOut();
+	
+	GetWorldTimerManager().SetTimer(WidgetOffHandle, FTimerDelegate::CreateLambda([&]
+	{
+		DamageWidget->RemoveFromParent();
+		
+	}), 0.5f, false);
 }
 
 void APlayerCharacter::OnDeath(AActor* Victim)
 {
 	GetWorldTimerManager().ClearTimer(DamageTimerHandle);
 	FSMComp->SetPlayerState(EPlayerState::Dead);
+
+	GetCharacterMovement()->SetMovementMode(MOVE_None);
+	
+	FVector DeadPoint = GetActorLocation();
+	FVector RespawnPoint = DeadPoint + RespawnOffset;
+	
+	RespawnPlayer(RespawnPoint);
 }
 
 
@@ -262,12 +290,12 @@ void APlayerCharacter::StartCameraProne(bool IsProning)
 
 	FTimerHandle TimerHandle;
 
-	// prone <-> idle/move 사이 움직일 텀 필요
+	// Prone start/end동안 잠깐 멈춤
 	GetCharacterMovement()->SetMovementMode(MOVE_None);
 	GetWorldTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda([&]
 	{
 		GetCharacterMovement()->SetMovementMode(MOVE_Walking);
-	}), 0.1f, false);
+	}), 0.8f, false);
 	
 	if (IsProning)
 	{
@@ -391,6 +419,21 @@ void APlayerCharacter::StopThrowMontage()
 {
 	GetWorldTimerManager().ClearTimer(ThrowAimTimerHandle);
 	bStartThrowAim = true;
+}
+
+void APlayerCharacter::RespawnPlayer(FVector RespawnPoint)
+{
+	TeleportTo(RespawnPoint, FRotator::ZeroRotator, false);
+	SetPlayerToDefault();
+}
+
+void APlayerCharacter::SetPlayerToDefault()
+{
+	HealthComp->ResetHealth();
+	FSMComp->SetPlayerState(EPlayerState::Idle);
+	GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+	
+	DamageWidget->RemoveFromParent();
 }
 
 

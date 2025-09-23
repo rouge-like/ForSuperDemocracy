@@ -188,8 +188,6 @@ void ASuperPlayerController::AimingEnd(const FInputActionValue& Value)
 		return;
 	}
 	
-	
-	
 	bIsAiming = false;
 	PlayerCharacter->bIsPlayerAiming = false;
 	PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed *= 2.f;
@@ -270,13 +268,7 @@ void ASuperPlayerController::Prone(const FInputActionValue& Value)
 	}
 	else
 	{
-		FTimerHandle TimerHandle;
-		GetWorldTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda([&]
-		{
-			float CurrentSpeed = PlayerCharacter->GetCharacterMovement()->Velocity.Length();
-			FSM->SetPlayerState(CurrentSpeed > 0 ? EPlayerState::Move : EPlayerState::Idle);
-
-		}), 0.11f, false);
+		FSM->SetPlayerState(EPlayerState::Move);
 		
 		PlayerCharacter->StartCameraProne(false);
 		PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
