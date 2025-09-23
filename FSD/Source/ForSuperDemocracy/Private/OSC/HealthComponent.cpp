@@ -12,6 +12,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "TimerManager.h"
+#include "GameFramework/SpringArmComponent.h"
 
 // 컴포넌트 기본값 설정(틱 활성화 등)
 UHealthComponent::UHealthComponent()
@@ -171,6 +172,10 @@ void UHealthComponent::HandleRadialDamage(AActor* DamagedActor, float Damage, co
                 MoveComp->GravityScale = 0.f;
                 MoveComp->SetMovementMode(MOVE_None);
             }
+            if (USpringArmComponent* SpringArm = Cast<USpringArmComponent>(Char->GetComponentByClass(USpringArmComponent::StaticClass())))
+            {
+                SpringArm->TargetOffset *= 2;
+            }
         }
 
         // Broadcast ragdoll start for external systems (e.g., camera follow)
@@ -243,6 +248,10 @@ void UHealthComponent::RecoverFromRagdoll()
     if (ACharacter* Char = Cast<ACharacter>(Owner))
     {
         Mesh = Char->GetMesh();
+        if (USpringArmComponent* SpringArm = Cast<USpringArmComponent>(Char->GetComponentByClass(USpringArmComponent::StaticClass())))
+        {
+            SpringArm->TargetOffset /= 2;
+        }
     }
     if (!Mesh)
     {
@@ -304,7 +313,8 @@ void UHealthComponent::RecoverFromRagdoll()
             bDetachedMeshDuringRagdoll = false;
         }
     }
-
+    
+    
     // Broadcast ragdoll end for external systems (e.g., camera follow)
     OnRagdollEnd.Broadcast(Owner);
 }
@@ -327,8 +337,6 @@ void UHealthComponent::ApplyDamageInternal(float Damage, AActor* DamageCauser, A
     if (CurrentHealth <= 0.f && bCanDie)
     {
         OnDeath.Broadcast(GetOwner());
-        if(GEngine) GEngine->AddOnScreenDebugMessage(3, 1.5f, FColor::Green, FString::Printf(TEXT("%s DEAD"), *GetOwner()->GetActorNameOrLabel()));
     }
 
-    if(GEngine) GEngine->AddOnScreenDebugMessage(2, 1.5f, FColor::Green, FString::Printf(TEXT("%s HP %.f / %.f"), *GetOwner()->GetActorNameOrLabel(), CurrentHealth, MaxHealth)); // 디버그: 현재 HP 출력
 }

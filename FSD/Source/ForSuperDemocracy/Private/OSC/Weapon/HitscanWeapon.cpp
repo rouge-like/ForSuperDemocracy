@@ -91,7 +91,6 @@ void AHitscanWeapon::FireOnce()
 			InstigatorController = P->GetController();
 		}
 		UGameplayStatics::ApplyPointDamage(HitActor, Data ? Data->Damage : 0.f, ShotDir, Hit, InstigatorController, this, UDamageType::StaticClass());
-        
 	}
 }
 

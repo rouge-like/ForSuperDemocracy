@@ -112,7 +112,7 @@ void AWeaponBase::StartReload()
     bIsReloading = true;
 
     GetWorldTimerManager().SetTimer(TimerHandle_Reload, this, &AWeaponBase::EndReload, Data->ReloadTime, false);
-    if(GEngine) GEngine->AddOnScreenDebugMessage(1, 1.5f, FColor::Green, FString::Printf(TEXT("Reloading...")));
+    // if(GEngine) GEngine->AddOnScreenDebugMessage(1, 1.5f, FColor::Green, FString::Printf(TEXT("Reloading...")));
 }
 
 bool AWeaponBase::CanFire() const
@@ -180,7 +180,7 @@ void AWeaponBase::ShowBullet() const
             mainHUD->GetMainUI()->GetWeaponWidget()->SetMaxAmmo(WC->GetReserveAmmo(Data->AmmoType));
         }
     }
-    if(GEngine) GEngine->AddOnScreenDebugMessage(1, 1.5f, FColor::Green, FString::Printf(TEXT("Bullet %d / %d"), GetCurrentAmmo(), WC->GetReserveAmmo(Data->AmmoType)));
+    // if(GEngine) GEngine->AddOnScreenDebugMessage(1, 1.5f, FColor::Green, FString::Printf(TEXT("Bullet %d / %d"), GetCurrentAmmo(), WC->GetReserveAmmo(Data->AmmoType)));
 }
 
 void AWeaponBase::FireOnce()
