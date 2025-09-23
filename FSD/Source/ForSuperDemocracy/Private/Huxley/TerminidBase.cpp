@@ -61,6 +61,9 @@ ATerminidBase::ATerminidBase()
 	LastHurtTime = 0.0f;
 	HurtRecoveryTime = 0.8f; // 1.5초 후 복원
 
+	// 스폰 관련 초기화
+	bIsSpawnedBySpawner = false; // 기본적으로 레벨에 배치된 것으로 간주
+
 	// Burrow 관련 초기화
 	bStartInBurrow = false;
 	bIsBurrowed = false;
@@ -93,6 +96,13 @@ ATerminidBase::ATerminidBase()
 
 	// 단순화된 소리 감지 관련 초기화
 	SoundDetectionRange = 1500.0f; // 통합된 소리 감지 범위
+
+	// 막힘 감지 관련 초기화
+	LastPosition = FVector::ZeroVector;
+	LastMovementTime = 0.0f;
+	StuckCheckTime = 0.0f;
+	StuckDetectionThreshold = 50.0f; // 50 유닛 이하로 움직이면 막힌 것으로 간주
+	StuckTimeLimit = 3.0f; // 3초 동안 막혀있으면 우회 시도
 }
 
 void ATerminidBase::BeginPlay()
@@ -206,6 +216,17 @@ void ATerminidBase::ProcessIdleBehavior(float DeltaTime)
 {
 	// 기본 대기 상태 처리
 	// 파생 클래스에서 오버라이드하여 구체적인 행동 구현
+
+	// 스포너에서 생성된 터미니드만 적극적으로 플레이어를 찾음
+	// 레벨에 배치된 터미니드는 정상적인 감지 시스템만 사용
+	if (bIsSpawnedBySpawner && !HasValidTarget())
+	{
+		APawn* NearestPlayer = FindNearestPlayer();
+		if (NearestPlayer)
+		{
+			SetCurrentTarget(NearestPlayer);
+		}
+	}
 }
 
 void ATerminidBase::ProcessPatrolBehavior(float DeltaTime)
@@ -228,6 +249,9 @@ void ATerminidBase::ProcessChaseBehavior(float DeltaTime)
 			}
 			return;
 		}
+
+		// 막힘 감지 및 우회 로직
+		CheckIfStuckAndFindAlternatePath(DeltaTime);
 
 		// 아직 공격 범위가 아니면 계속 이동
 		MoveTowardsTarget(DeltaTime);
@@ -324,6 +348,9 @@ void ATerminidBase::SetCurrentTarget(AActor* NewTarget)
 	{
 		LastKnownTargetLocation = NewTarget->GetActorLocation();
 		UpdateTargetDistance();
+	}
+	else
+	{
 	}
 }
 
@@ -625,7 +652,16 @@ void ATerminidBase::MoveTowardsTarget(float DeltaTime)
 		return;
 	}
 
-	MoveTowardsLocation(CurrentTarget->GetActorLocation(), DeltaTime);
+	// 현재 타겟 위치와 마지막으로 알려진 위치 중 더 가까운 곳으로 이동
+	FVector TargetPos = CurrentTarget->GetActorLocation();
+	FVector MyPos = GetActorLocation();
+
+	// 직접 타겟으로 갈 수 있으면 타겟으로, 아니면 마지막 알려진 위치로
+	float DistToTarget = FVector::Dist(MyPos, TargetPos);
+	float DistToLastKnown = FVector::Dist(MyPos, LastKnownTargetLocation);
+
+	FVector MoveTarget = (DistToLastKnown < DistToTarget) ? LastKnownTargetLocation : TargetPos;
+	MoveTowardsLocation(MoveTarget, DeltaTime);
 }
 
 void ATerminidBase::MoveTowardsLocation(const FVector& TargetLocation, float DeltaTime)
@@ -655,6 +691,99 @@ void ATerminidBase::StopMovement()
 	{
 		CharMovement->StopMovementImmediately();
 	}
+}
+
+// 막힘 감지 및 우회 시스템
+void ATerminidBase::CheckIfStuckAndFindAlternatePath(float DeltaTime)
+{
+	if (!HasValidTarget())
+	{
+		return;
+	}
+
+	FVector CurrentPosition = GetActorLocation();
+	float CurrentTime = GetWorld()->GetTimeSeconds();
+
+	// 초기 위치 설정
+	if (LastPosition.IsZero())
+	{
+		LastPosition = CurrentPosition;
+		LastMovementTime = CurrentTime;
+		return;
+	}
+
+	// 움직임 거리 계산
+	float MovementDistance = FVector::Dist(CurrentPosition, LastPosition);
+
+	// 충분히 움직였으면 위치 업데이트
+	if (MovementDistance > StuckDetectionThreshold)
+	{
+		LastPosition = CurrentPosition;
+		LastMovementTime = CurrentTime;
+		StuckCheckTime = 0.0f;
+		return;
+	}
+
+	// 막힌 시간 증가
+	StuckCheckTime += DeltaTime;
+
+	// 일정 시간 동안 막혀있으면 우회 경로 시도
+	if (StuckCheckTime >= StuckTimeLimit)
+	{
+
+		// 타겟 주변의 다른 위치로 이동 시도
+		FVector AlternatePosition = FindAlternatePositionAroundTarget();
+		LastKnownTargetLocation = AlternatePosition;
+
+		// 막힘 상태 초기화
+		StuckCheckTime = 0.0f;
+		LastPosition = CurrentPosition;
+		LastMovementTime = CurrentTime;
+	}
+}
+
+FVector ATerminidBase::FindAlternatePositionAroundTarget() const
+{
+	if (!HasValidTarget())
+	{
+		return GetActorLocation();
+	}
+
+	FVector TargetLocation = CurrentTarget->GetActorLocation();
+
+	// 타겟 주변에 여러 후보 위치 생성 (원형으로 배치)
+	TArray<FVector> CandidatePositions;
+	float SearchRadius = FMath::Max(BaseStats.AttackRange * 0.8f, 300.0f); // 공격 범위의 80% 또는 최소 300 유닛
+	int32 NumCandidates = 8; // 8방향
+
+	for (int32 i = 0; i < NumCandidates; i++)
+	{
+		float Angle = (2.0f * PI * i) / NumCandidates;
+		FVector Offset = FVector(
+			FMath::Cos(Angle) * SearchRadius,
+			FMath::Sin(Angle) * SearchRadius,
+			0.0f
+		);
+		CandidatePositions.Add(TargetLocation + Offset);
+	}
+
+	// 가장 가까운 후보 위치 선택 (간단한 방법)
+	FVector MyLocation = GetActorLocation();
+	FVector BestPosition = TargetLocation;
+	float BestDistance = FLT_MAX;
+
+	for (const FVector& Candidate : CandidatePositions)
+	{
+		float DistanceToCandidate = FVector::Dist(MyLocation, Candidate);
+		if (DistanceToCandidate < BestDistance)
+		{
+			BestDistance = DistanceToCandidate;
+			BestPosition = Candidate;
+		}
+	}
+
+
+	return BestPosition;
 }
 
 // 죽음 및 생명주기 - HealthComponent를 통해 처리
@@ -907,7 +1036,6 @@ void ATerminidBase::StartSpawnSequence()
 	// 애니메이션이 없으면 즉시 완료, 있으면 타이머 설정
 	if (!SpawnAnimationSequence)
 	{
-		UE_LOG(LogTemp, Log, TEXT("TerminidBase: No spawn animation, completing spawn immediately for %s"), *GetClass()->GetName());
 		// 애니메이션이 없으면 0.1초 후 즉시 완료 (자연스러운 딜레이)
 		GetWorld()->GetTimerManager().SetTimer(
 			SpawnTimerHandle,
@@ -936,25 +1064,35 @@ void ATerminidBase::CompleteSpawnSequence()
 	// Blueprint 애니메이션 완료 이벤트 호출
 	OnSpawnAnimationComplete();
 
-	// 플레이어 감지 후 바로 Chase 상태로 전환
-	APawn* NearestPlayer = FindNearestPlayer();
-	if (NearestPlayer)
+	// 스포너에서 생성된 터미니드만 즉시 플레이어를 추격
+	if (bIsSpawnedBySpawner)
 	{
-		SetCurrentTarget(NearestPlayer);
-		if (StateMachine)
+		// 플레이어 감지 후 바로 Chase 상태로 전환
+		APawn* NearestPlayer = FindNearestPlayer();
+		if (NearestPlayer)
 		{
-			StateMachine->ChangeState(ETerminidState::Chase);
+			SetCurrentTarget(NearestPlayer);
+			if (StateMachine)
+			{
+				StateMachine->ChangeState(ETerminidState::Chase);
+			}
 		}
-		UE_LOG(LogTemp, Log, TEXT("TerminidBase: Spawn completed, entering Chase state targeting %s"), *NearestPlayer->GetName());
+		else
+		{
+			// 플레이어가 없으면 Idle 상태로
+			if (StateMachine)
+			{
+				StateMachine->ChangeState(ETerminidState::Idle);
+			}
+		}
 	}
 	else
 	{
-		// 플레이어가 없으면 Idle 상태로 (기존 동작)
+		// 레벨에 배치된 터미니드는 항상 Idle 상태로 시작 (정상적인 감지 시스템 사용)
 		if (StateMachine)
 		{
 			StateMachine->ChangeState(ETerminidState::Idle);
 		}
-		UE_LOG(LogTemp, Log, TEXT("TerminidBase: Spawn completed, no player found - entering Idle state"));
 	}
 
 	// 타이머 핸들 정리
@@ -966,14 +1104,12 @@ void ATerminidBase::PlaySpawnAnimation()
 {
 	if (!SpawnAnimationSequence)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("TerminidBase: No SpawnAnimationSequence assigned for %s"), *GetClass()->GetName());
 		return;
 	}
 
 	USkeletalMeshComponent* MeshComp = GetMesh();
 	if (!MeshComp)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("TerminidBase: No SkeletalMeshComponent found"));
 		return;
 	}
 
@@ -987,7 +1123,6 @@ void ATerminidBase::PlaySpawnAnimation()
 		1      // LoopCount (1회만 재생)
 	);
 
-	UE_LOG(LogTemp, Log, TEXT("TerminidBase: Playing spawn animation %s"), *SpawnAnimationSequence->GetName());
 }
 
 // 체력 회복 시스템

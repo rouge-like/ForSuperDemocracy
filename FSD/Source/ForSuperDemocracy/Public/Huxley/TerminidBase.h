@@ -81,6 +81,10 @@ public:
     UPROPERTY(BlueprintReadOnly, Category = "Combat")
     float LastDamageTime; // 마지막 피격 시간
 
+    // 스폰 관련 속성
+    UPROPERTY(BlueprintReadOnly, Category = "Spawning")
+    bool bIsSpawnedBySpawner; // 스포너에서 생성되었는지 여부
+
     // 애니메이션 관련 속성
     UPROPERTY(BlueprintReadOnly, Category = "Animation")
     bool bIsSpawning;
@@ -276,6 +280,13 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Movement")
     void StopMovement();
 
+    // 막힘 감지 및 우회 시스템
+    UFUNCTION(BlueprintCallable, Category = "AI")
+    void CheckIfStuckAndFindAlternatePath(float DeltaTime);
+
+    UFUNCTION(BlueprintCallable, Category = "AI")
+    FVector FindAlternatePositionAroundTarget() const;
+
     // 죽음 및 생명주기
     UFUNCTION(BlueprintCallable, Category = "Lifecycle")
     virtual void Die();
@@ -368,6 +379,22 @@ public:
     // 단순화된 소리 감지 범위
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI")
     float SoundDetectionRange;
+
+    // 막힘 감지 관련 변수들
+    UPROPERTY(BlueprintReadOnly, Category = "AI")
+    FVector LastPosition;
+
+    UPROPERTY(BlueprintReadOnly, Category = "AI")
+    float LastMovementTime;
+
+    UPROPERTY(BlueprintReadOnly, Category = "AI")
+    float StuckCheckTime;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI")
+    float StuckDetectionThreshold; // 움직임이 없다고 판단할 거리 임계값
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI")
+    float StuckTimeLimit; // 이 시간 동안 막혀있으면 우회 시도
 
 protected:
     // 타이머 핸들들 (파생 클래스에서 접근 가능)

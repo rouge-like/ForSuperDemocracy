@@ -36,7 +36,7 @@ ATerminidScavenger::ATerminidScavenger()
 
 	// 스캐빈저 특화 감지 시스템 (매우 넓은 감지 범위)
 	SightAngle = 180.0f; // 기본 90도 -> 180도로 확장 (매우 넓은 시야각)
-	SightRange = 2500.0f; // 기본 800 -> 2500으로 대폭 확장 (매우 넓은 시야)
+	SightRange = 4000.0f; // 기본 800 -> 2500으로 대폭 확장 (매우 넓은 시야)
 
 	// 스캐빈저 특화 소리 감지 (더 예민함)
 	SoundDetectionRange = 2000.0f; // 기본 1500 -> 2000으로 확장
@@ -139,7 +139,6 @@ void ATerminidScavenger::ProcessIdleMovement(float DeltaTime)
 			IdleTargetLocation = CurrentLocation + RandomOffset;
 			bHasIdleTarget = true;
 
-			// UE_LOG(LogTemp, Warning, TEXT("Scavenger New Idle Target: %s"), *IdleTargetLocation.ToString());
 		}
 	}
 
@@ -331,10 +330,9 @@ void ATerminidScavenger::ProcessZigzagChase(float DeltaTime)
 		bIsZigzagging = true;
 
 		// 좌우로 큰 사이드스텝
-		FVector SideStep = GetActorRightVector() * FMath::RandRange(-200.0f, 200.0f);
+		FVector SideStep = GetActorRightVector() * FMath::RandRange(-400.0f, 400.0f);
 		ZigzagTargetLocation = CurrentLocation + SideStep;
 
-		// UE_LOG(LogTemp, Warning, TEXT("Scavenger Zigzag Start: %s"), *ZigzagTargetLocation.ToString());
 	}
 
 	// 지그재그 중일 때
