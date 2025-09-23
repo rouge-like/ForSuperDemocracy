@@ -21,6 +21,7 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 public:
 	virtual void Tick(float DeltaTime) override;
@@ -117,6 +118,13 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Spawner")
 	FVector GetSpawnLocationWithOffset(const FVector& Offset) const;
 
+	// SpawnPoint 관련 함수들
+	UFUNCTION(BlueprintCallable, Category = "Spawner")
+	FVector GetSpawnPointLocation() const;
+
+	UFUNCTION(BlueprintCallable, Category = "Spawner")
+	FRotator GetSpawnPointRotation() const;
+
 	// 플레이어 관련
 	UFUNCTION(BlueprintPure, Category = "Spawner")
 	APawn* GetNearestPlayer() const;
@@ -140,9 +148,17 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Destruction")
 	UStaticMesh* BlockingMesh;
 
-	// 파괴된 스포너 메시 (교체용)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Destruction")
-	TSoftObjectPtr<UStaticMesh> DestroyedSpawnerMesh;
+	// 기본 메시 컴포넌트
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mesh")
+	UStaticMeshComponent* NormalMeshComponent;
+
+	// 파괴된 메시 컴포넌트
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mesh")
+	UStaticMeshComponent* DestroyedMeshComponent;
+
+	// 스폰 포인트 컴포넌트
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Spawn")
+	class USceneComponent* SpawnPoint;
 
 	// HealthComponent 추가 (OSC 시스템과 연동)
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Health")
@@ -218,7 +234,7 @@ private:
 
 	// 파괴 시스템 관련
 	void CreateBlockingMesh();
-	void ReplaceSpawnerMesh();
+	void SwitchToDestroyedMesh();
 
 	// 블로킹 메시 컴포넌트
 	UPROPERTY()

@@ -29,7 +29,6 @@ void UAnimNotify_WarriorAttack::Notify(USkeletalMeshComponent* MeshComp, UAnimSe
 
     if (!MeshComp || !MeshComp->GetWorld())
     {
-        UE_LOG(LogTemp, Warning, TEXT("AnimNotify_WarriorAttack: Invalid MeshComp or World"));
         return;
     }
 
@@ -37,7 +36,6 @@ void UAnimNotify_WarriorAttack::Notify(USkeletalMeshComponent* MeshComp, UAnimSe
     AActor* Attacker = MeshComp->GetOwner();
     if (!Attacker)
     {
-        UE_LOG(LogTemp, Warning, TEXT("AnimNotify_WarriorAttack: No valid attacker found"));
         return;
     }
 
@@ -45,14 +43,12 @@ void UAnimNotify_WarriorAttack::Notify(USkeletalMeshComponent* MeshComp, UAnimSe
     ATerminidWarrior* WarriorAttacker = Cast<ATerminidWarrior>(Attacker);
     if (!WarriorAttacker)
     {
-        UE_LOG(LogTemp, Warning, TEXT("AnimNotify_WarriorAttack: Attacker is not a TerminidWarrior"));
         return;
     }
 
     // 회피 중에는 공격하지 않음
     if (WarriorAttacker->IsDodging())
     {
-        UE_LOG(LogTemp, Log, TEXT("AnimNotify_WarriorAttack: Warrior is dodging, skipping attack"));
         return;
     }
 
@@ -75,9 +71,6 @@ void UAnimNotify_WarriorAttack::Notify(USkeletalMeshComponent* MeshComp, UAnimSe
         float ActualDamage = WarriorAttacker->BaseStats.AttackDamage;
 
         ApplyDamageToTarget(Target, Attacker, ActualDamage);
-
-        UE_LOG(LogTemp, Log, TEXT("AnimNotify_WarriorAttack: Applied %f damage to %s"),
-               ActualDamage, *Target->GetName());
     }
 }
 

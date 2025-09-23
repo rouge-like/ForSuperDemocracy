@@ -29,7 +29,6 @@ void UAnimNotify_ScavengerAttack::Notify(USkeletalMeshComponent* MeshComp, UAnim
 
     if (!MeshComp || !MeshComp->GetWorld())
     {
-        UE_LOG(LogTemp, Warning, TEXT("AnimNotify_ScavengerAttack: Invalid MeshComp or World"));
         return;
     }
 
@@ -37,7 +36,6 @@ void UAnimNotify_ScavengerAttack::Notify(USkeletalMeshComponent* MeshComp, UAnim
     AActor* Attacker = MeshComp->GetOwner();
     if (!Attacker)
     {
-        UE_LOG(LogTemp, Warning, TEXT("AnimNotify_ScavengerAttack: No valid attacker found"));
         return;
     }
 
@@ -45,7 +43,6 @@ void UAnimNotify_ScavengerAttack::Notify(USkeletalMeshComponent* MeshComp, UAnim
     ATerminidBase* TerminidAttacker = Cast<ATerminidBase>(Attacker);
     if (!TerminidAttacker)
     {
-        UE_LOG(LogTemp, Warning, TEXT("AnimNotify_ScavengerAttack: Attacker is not a TerminidBase"));
         return;
     }
 
@@ -68,9 +65,6 @@ void UAnimNotify_ScavengerAttack::Notify(USkeletalMeshComponent* MeshComp, UAnim
         float ActualDamage = TerminidAttacker->BaseStats.AttackDamage;
         
         ApplyDamageToTarget(Target, Attacker, ActualDamage);
-        
-        UE_LOG(LogTemp, Log, TEXT("AnimNotify_ScavengerAttack: Applied %f damage to %s"), 
-               ActualDamage, *Target->GetName());
     }
 }
 

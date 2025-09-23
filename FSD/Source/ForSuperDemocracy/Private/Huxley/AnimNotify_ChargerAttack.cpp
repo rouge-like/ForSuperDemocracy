@@ -34,7 +34,6 @@ void UAnimNotify_ChargerAttack::Notify(USkeletalMeshComponent* MeshComp, UAnimSe
 
     if (!MeshComp || !MeshComp->GetWorld())
     {
-        UE_LOG(LogTemp, Warning, TEXT("AnimNotify_ChargerAttack: Invalid MeshComp or World"));
         return;
     }
 
@@ -42,7 +41,6 @@ void UAnimNotify_ChargerAttack::Notify(USkeletalMeshComponent* MeshComp, UAnimSe
     AActor* Attacker = MeshComp->GetOwner();
     if (!Attacker)
     {
-        UE_LOG(LogTemp, Warning, TEXT("AnimNotify_ChargerAttack: No valid attacker found"));
         return;
     }
 
@@ -50,7 +48,6 @@ void UAnimNotify_ChargerAttack::Notify(USkeletalMeshComponent* MeshComp, UAnimSe
     ATerminidCharger* ChargerAttacker = Cast<ATerminidCharger>(Attacker);
     if (!ChargerAttacker)
     {
-        UE_LOG(LogTemp, Warning, TEXT("AnimNotify_ChargerAttack: Attacker is not a TerminidCharger"));
         return;
     }
 
@@ -82,12 +79,9 @@ void UAnimNotify_ChargerAttack::Notify(USkeletalMeshComponent* MeshComp, UAnimSe
                 // 넉백 효과 적용
                 ApplyKnockbackToTarget(Target, AttackerLocation);
 
-                UE_LOG(LogTemp, Log, TEXT("AnimNotify_ChargerAttack: Applied %f damage to %s with knockback"),
-                       ActualDamage, *Target->GetName());
             }
         }
 
-        UE_LOG(LogTemp, Log, TEXT("AnimNotify_ChargerAttack: Hit %d targets"), Targets.Num());
     }
 }
 

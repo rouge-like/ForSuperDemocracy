@@ -11,6 +11,10 @@ ATerminidCharger::ATerminidCharger()
 
     // Charger 특화 초기화
     bHasTriggeredHurtAt50Percent = false;
+
+    // 차저 특화 감지 시스템 (향상된 감지 범위)
+    SightAngle = 270.0f; // 기본 90도 -> 270도로 확장 (3배)
+    SightRange = 2400.0f; // 기본 800 -> 2400으로 확장 (3배)
 }
 
 void ATerminidCharger::BeginPlay()
@@ -31,7 +35,6 @@ void ATerminidCharger::BeginPlay()
             Health->OnDamaged.RemoveAll(this);
             // Charger 전용 OnDamaged 바인딩
             Health->OnDamaged.AddDynamic(this, &ATerminidCharger::OnDamaged);
-            UE_LOG(LogTemp, Warning, TEXT("TerminidCharger: Custom OnDamaged binding applied (Next Tick)"));
         }
     });
 }
@@ -47,8 +50,6 @@ void ATerminidCharger::ProcessAttackBehavior(float DeltaTime)
 
 void ATerminidCharger::OnDamaged(float Damage, AActor* DamageCauser, AController* EventInstigator, TSubclassOf<UDamageType> DamageType)
 {
-    UE_LOG(LogTemp, Error, TEXT("*** CHARGER CUSTOM OnDamaged CALLED *** Damage: %.1f, Health: %.1f%%"),
-           Damage, GetHealthPercent() * 100.0f);
 
     // 기본 피격 처리 (시간 기록, 체력 회복 중단 등)
     LastHurtTime = GetWorld()->GetTimeSeconds();
@@ -93,13 +94,10 @@ void ATerminidCharger::OnDamaged(float Damage, AActor* DamageCauser, AController
             false
         );
 
-        UE_LOG(LogTemp, Warning, TEXT("TerminidCharger: TRIGGERED hurt state at %.1f%% health"), HealthPercent * 100.0f);
     }
     else
     {
         // 50% 이상이거나 이미 Hurt를 발동했으면 Hurt 상태로 가지 않음
-        UE_LOG(LogTemp, Warning, TEXT("TerminidCharger: Damage received but NO HURT STATE (Health: %.1f%%, Already triggered: %s)"),
-               HealthPercent * 100.0f, bHasTriggeredHurtAt50Percent ? TEXT("Yes") : TEXT("No"));
     }
 
     // 블루프린트 이벤트 호출
