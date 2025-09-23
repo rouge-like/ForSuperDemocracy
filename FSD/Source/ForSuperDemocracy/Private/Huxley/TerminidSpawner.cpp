@@ -775,10 +775,6 @@ void ATerminidSpawner::OnDamaged(float Damage, AActor* DamageCauser, AController
 	FVector HitLocation = GetActorLocation();
 	OnExplosionHit(HitLocation, Damage);
 
-	// 데미지 소스 로깅
-	FString DamageCauserName = DamageCauser ? DamageCauser->GetName() : TEXT("Unknown");
-	UE_LOG(LogTemp, Log, TEXT("TerminidSpawner: Received %.1f damage from %s. Health: %.1f/%.1f"),
-	       Damage, *DamageCauserName, CurrentHealth, MaxHealth);
 }
 
 

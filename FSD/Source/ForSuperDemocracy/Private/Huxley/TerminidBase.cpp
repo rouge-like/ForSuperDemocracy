@@ -224,7 +224,6 @@ void ATerminidBase::ProcessIdleBehavior(float DeltaTime)
 		APawn* NearestPlayer = FindNearestPlayer();
 		if (NearestPlayer)
 		{
-			UE_LOG(LogTemp, Log, TEXT("TerminidBase: Spawner-created terminid detected player %s in idle behavior"), *NearestPlayer->GetName());
 			SetCurrentTarget(NearestPlayer);
 		}
 	}
@@ -349,12 +348,9 @@ void ATerminidBase::SetCurrentTarget(AActor* NewTarget)
 	{
 		LastKnownTargetLocation = NewTarget->GetActorLocation();
 		UpdateTargetDistance();
-		UE_LOG(LogTemp, Log, TEXT("TerminidBase: Target set to %s at distance %.2f"),
-			*NewTarget->GetName(), DistanceToTarget);
 	}
 	else
 	{
-		UE_LOG(LogTemp, Log, TEXT("TerminidBase: Target cleared"));
 	}
 }
 
@@ -734,7 +730,6 @@ void ATerminidBase::CheckIfStuckAndFindAlternatePath(float DeltaTime)
 	// 일정 시간 동안 막혀있으면 우회 경로 시도
 	if (StuckCheckTime >= StuckTimeLimit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("TerminidBase: %s is stuck, finding alternate path"), *GetName());
 
 		// 타겟 주변의 다른 위치로 이동 시도
 		FVector AlternatePosition = FindAlternatePositionAroundTarget();
@@ -787,8 +782,6 @@ FVector ATerminidBase::FindAlternatePositionAroundTarget() const
 		}
 	}
 
-	UE_LOG(LogTemp, Log, TEXT("TerminidBase: Found alternate position %s for target %s"),
-		*BestPosition.ToString(), *TargetLocation.ToString());
 
 	return BestPosition;
 }
@@ -864,7 +857,6 @@ APawn* ATerminidBase::FindNearestPlayer() const
 	UWorld* World = GetWorld();
 	if (!World)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("TerminidBase: World is null in FindNearestPlayer"));
 		return nullptr;
 	}
 
@@ -872,15 +864,9 @@ APawn* ATerminidBase::FindNearestPlayer() const
 	APlayerController* PC = World->GetFirstPlayerController();
 	if (PC && PC->GetPawn())
 	{
-		UE_LOG(LogTemp, Log, TEXT("TerminidBase: Found player %s at location %s"),
-			*PC->GetPawn()->GetName(),
-			*PC->GetPawn()->GetActorLocation().ToString());
 		return PC->GetPawn();
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("TerminidBase: No player found - PC: %s, Pawn: %s"),
-		PC ? TEXT("Valid") : TEXT("Null"),
-		(PC && PC->GetPawn()) ? TEXT("Valid") : TEXT("Null"));
 	return nullptr;
 }
 
@@ -1050,7 +1036,6 @@ void ATerminidBase::StartSpawnSequence()
 	// 애니메이션이 없으면 즉시 완료, 있으면 타이머 설정
 	if (!SpawnAnimationSequence)
 	{
-		UE_LOG(LogTemp, Log, TEXT("TerminidBase: No spawn animation, completing spawn immediately for %s"), *GetClass()->GetName());
 		// 애니메이션이 없으면 0.1초 후 즉시 완료 (자연스러운 딜레이)
 		GetWorld()->GetTimerManager().SetTimer(
 			SpawnTimerHandle,
@@ -1091,7 +1076,6 @@ void ATerminidBase::CompleteSpawnSequence()
 			{
 				StateMachine->ChangeState(ETerminidState::Chase);
 			}
-			UE_LOG(LogTemp, Log, TEXT("TerminidBase: Spawner-created terminid completed spawn, entering Chase state targeting %s"), *NearestPlayer->GetName());
 		}
 		else
 		{
@@ -1100,7 +1084,6 @@ void ATerminidBase::CompleteSpawnSequence()
 			{
 				StateMachine->ChangeState(ETerminidState::Idle);
 			}
-			UE_LOG(LogTemp, Log, TEXT("TerminidBase: Spawner-created terminid completed spawn, no player found - entering Idle state"));
 		}
 	}
 	else
@@ -1110,7 +1093,6 @@ void ATerminidBase::CompleteSpawnSequence()
 		{
 			StateMachine->ChangeState(ETerminidState::Idle);
 		}
-		UE_LOG(LogTemp, Log, TEXT("TerminidBase: Pre-placed terminid completed spawn, entering Idle state - will use normal detection"));
 	}
 
 	// 타이머 핸들 정리
@@ -1122,14 +1104,12 @@ void ATerminidBase::PlaySpawnAnimation()
 {
 	if (!SpawnAnimationSequence)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("TerminidBase: No SpawnAnimationSequence assigned for %s"), *GetClass()->GetName());
 		return;
 	}
 
 	USkeletalMeshComponent* MeshComp = GetMesh();
 	if (!MeshComp)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("TerminidBase: No SkeletalMeshComponent found"));
 		return;
 	}
 
@@ -1143,7 +1123,6 @@ void ATerminidBase::PlaySpawnAnimation()
 		1      // LoopCount (1회만 재생)
 	);
 
-	UE_LOG(LogTemp, Log, TEXT("TerminidBase: Playing spawn animation %s"), *SpawnAnimationSequence->GetName());
 }
 
 // 체력 회복 시스템

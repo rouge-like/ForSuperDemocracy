@@ -12,6 +12,10 @@ ATerminidWarrior::ATerminidWarrior()
 
     // 내부 상태 초기화
     bIsDodging = false;
+
+    // 워리어 특화 감지 시스템 (향상된 감지 범위)
+    SightAngle = 240.0f; // 기본 90도 -> 240도로 확장 (약 2.7배)
+    SightRange = 2000.0f; // 기본 800 -> 2000으로 확장 (2.5배)
 }
 
 void ATerminidWarrior::BeginPlay()
