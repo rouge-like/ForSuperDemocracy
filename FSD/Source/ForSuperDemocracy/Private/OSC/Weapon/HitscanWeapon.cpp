@@ -7,6 +7,7 @@
 #include "Animation/AnimSequenceBase.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
+#include "GameFramework/Character.h"
 
 void AHitscanWeapon::FireOnce()
 {
@@ -89,6 +90,13 @@ void AHitscanWeapon::FireOnce()
 		if (APawn* P = Cast<APawn>(GetOwner()))
 		{
 			InstigatorController = P->GetController();
+		}
+		if (!Cast<ACharacter>(HitActor))
+		{
+			if (GroundVFX)
+			{
+				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), GroundVFX, ImpactPoint);
+			}
 		}
 		UGameplayStatics::ApplyPointDamage(HitActor, Data ? Data->Damage : 0.f, ShotDir, Hit, InstigatorController, this, UDamageType::StaticClass());
 	}

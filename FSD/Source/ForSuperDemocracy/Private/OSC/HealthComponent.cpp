@@ -13,6 +13,8 @@
 #include "Components/CapsuleComponent.h"
 #include "TimerManager.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "OSC/MainMode.h"
+#include "OSC/MissionComponent.h"
 
 // 컴포넌트 기본값 설정(틱 활성화 등)
 UHealthComponent::UHealthComponent()
@@ -38,6 +40,13 @@ void UHealthComponent::BeginPlay()
         Owner->OnTakeAnyDamage.AddDynamic(this, &UHealthComponent::HandleAnyDamage);
         Owner->OnTakePointDamage.AddDynamic(this, &UHealthComponent::HandlePointDamage);
         Owner->OnTakeRadialDamage.AddDynamic(this, &UHealthComponent::HandleRadialDamage);
+
+        if (auto* GM = GetWorld()->GetAuthGameMode<AMainMode>())
+        {
+            auto* MC = GM->GetMissionComponent();
+            
+            MC->OnMissionCompleted.AddDynamic(this, &UHealthComponent::OnMissionComplete);
+        }
     }
 }
 
@@ -54,6 +63,8 @@ void UHealthComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 
 void UHealthComponent::Heal(float Amount)
 {
+    if (bGameEnd) return;
+    
     if (Amount <= 0.f || CurrentHealth <= 0.f)
         return;
 
@@ -341,6 +352,8 @@ void UHealthComponent::RecoverFromRagdoll()
 // 공통 데미지 처리: 체력 감소, 이벤트 브로드캐스트, 사망 처리
 void UHealthComponent::ApplyDamageInternal(float Damage, AActor* DamageCauser, AController* InstigatedBy, const UDamageType* DamageType)
 {
+    if (bGameEnd) return;
+    
     if (Damage <= 0.f)
         return;
 
@@ -359,6 +372,11 @@ void UHealthComponent::ApplyDamageInternal(float Damage, AActor* DamageCauser, A
         OnRagdoll();
     }
 
+}
+
+void UHealthComponent::OnMissionComplete()
+{
+    bGameEnd = true;
 }
 
 void UHealthComponent::ResetHealth()

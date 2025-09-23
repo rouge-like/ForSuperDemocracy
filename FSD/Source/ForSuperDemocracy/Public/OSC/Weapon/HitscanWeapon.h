@@ -36,6 +36,10 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category="Weapon|VFX")
     TObjectPtr<UNiagaraSystem> ShotVFX;
 
+    // 바닥 사격 이펙트
+    UPROPERTY(EditDefaultsOnly, Category="Weapon|VFX")
+    TObjectPtr<UParticleSystem>  GroundVFX;
+    
     // Optional rotation offset to align VFX forward with muzzle
     UPROPERTY(EditDefaultsOnly, Category="Weapon|VFX")        
     FRotator ShotVFXRotationOffset = FRotator::ZeroRotator;

@@ -137,6 +137,12 @@ protected:
     UPROPERTY(Transient)
     FTransform SavedMeshRelativeTransform;
 
+    UPROPERTY()
+    bool bGameEnd = false;
+
+    UFUNCTION()
+    void OnMissionComplete();
+
 public:
     void ResetHealth();
 };

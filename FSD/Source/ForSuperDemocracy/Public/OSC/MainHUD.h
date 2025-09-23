@@ -7,6 +7,7 @@
 #include "MainHUD.generated.h"
 
 class UMainUI;
+class UUserWidget;
 struct FMissionObjective;
 /**
  * 
@@ -28,6 +29,14 @@ protected:
 	// 생성된 위젯 인스턴스
 	UPROPERTY()
 	TObjectPtr<UMainUI> MainUI;
+	
+	// WBP_MainUI를 할당할 클래스
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UUserWidget> CinematicUIClass;
+
+	// 생성된 위젯 인스턴스
+	UPROPERTY()
+	TObjectPtr<UUserWidget> CinematicUI;
 
 public:
 	UFUNCTION(BlueprintCallable)

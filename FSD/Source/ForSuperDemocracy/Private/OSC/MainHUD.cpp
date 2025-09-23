@@ -22,7 +22,11 @@ void AMainHUD::BeginPlay()
 			MainUI->AddToViewport(0);
 		}
 	}
-
+	
+	if (CinematicUIClass)
+	{
+		CinematicUI = CreateWidget<UUserWidget>(GetWorld(), CinematicUIClass);
+	}
 	if (auto* GM = GetWorld()->GetAuthGameMode<AMainMode>())
 	{
 		auto* MC = GM->GetMissionComponent();
@@ -68,6 +72,10 @@ void AMainHUD::OnMissionComplete()
 	if (MainUI)
 	{
 		MainUI->RemoveFromParent();
+	}
+	if (CinematicUI)
+	{
+		CinematicUI->AddToViewport(0);
 	}
 }
 
