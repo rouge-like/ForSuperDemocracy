@@ -177,4 +177,12 @@ public:
 	
 	void PlayThrowMontage();
 	void StopThrowMontage();
+
+public:
+	// Respawn
+	UPROPERTY(EditDefaultsOnly, Category=Respawn)
+	FVector RespawnOffset = FVector(0.f, -500.f, 0.f);
+	
+	void RespawnPlayer(FVector RespawnPoint);
+	void SetPlayerToDefault();
 };

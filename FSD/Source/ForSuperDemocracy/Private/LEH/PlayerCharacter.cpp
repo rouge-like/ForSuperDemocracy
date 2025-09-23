@@ -238,9 +238,15 @@ void APlayerCharacter::DamageWidgetOff()
 
 void APlayerCharacter::OnDeath(AActor* Victim)
 {
-	UE_LOG(LogTemp, Display, TEXT("dead"));
-	//GetWorldTimerManager().ClearTimer(DamageTimerHandle);
-	//FSMComp->SetPlayerState(EPlayerState::Dead);
+	GetWorldTimerManager().ClearTimer(DamageTimerHandle);
+	FSMComp->SetPlayerState(EPlayerState::Dead);
+
+	GetCharacterMovement()->SetMovementMode(MOVE_None);
+	
+	FVector DeadPoint = GetActorLocation();
+	FVector RespawnPoint = DeadPoint + RespawnOffset;
+	
+	RespawnPlayer(RespawnPoint);
 }
 
 
@@ -413,6 +419,21 @@ void APlayerCharacter::StopThrowMontage()
 {
 	GetWorldTimerManager().ClearTimer(ThrowAimTimerHandle);
 	bStartThrowAim = true;
+}
+
+void APlayerCharacter::RespawnPlayer(FVector RespawnPoint)
+{
+	TeleportTo(RespawnPoint, FRotator::ZeroRotator, false);
+	SetPlayerToDefault();
+}
+
+void APlayerCharacter::SetPlayerToDefault()
+{
+	HealthComp->ResetHealth();
+	FSMComp->SetPlayerState(EPlayerState::Idle);
+	GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+	
+	DamageWidget->RemoveFromParent();
 }
 
 
