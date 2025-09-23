@@ -177,12 +177,17 @@ public:
 	void StopThrowMontage();
 
 	FVector RespawnPoint;
+
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<class AHellPod> HellPod;
+	UFUNCTION()
+	void SpawnHellPod();
 public:
 	// Respawn
 	UPROPERTY(EditDefaultsOnly, Category=Respawn)
 	FVector RespawnOffset = FVector(0.f, -500.f, 0.f);
 	
-	void RespawnPlayer();
+	void RespawnPlayer(FVector NewRespawnPoint);
 	void SetPlayerToDefault();
 
 	bool bDamage;

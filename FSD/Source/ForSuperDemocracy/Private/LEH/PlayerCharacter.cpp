@@ -7,8 +7,10 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "LEH/DamageWidget.h"
+#include "LEH/HellPod.h"
 #include "LEH/PlayerAnimInstance.h"
 #include "LEH/PlayerFSM.h"
 #include "LEH/SuperPlayerController.h"
@@ -241,10 +243,10 @@ void APlayerCharacter::OnDeath(AActor* Victim)
 	GetCharacterMovement()->SetMovementMode(MOVE_None);
 	
 	FVector DeadPoint = GetActorLocation();
-	RespawnPoint = DeadPoint + RespawnOffset;
+	RespawnPoint = DeadPoint;
 
 	FTimerHandle SpawnTimer;
-	GetWorldTimerManager().SetTimer(SpawnTimer,this, &APlayerCharacter::RespawnPlayer, 5.f, false);
+	GetWorldTimerManager().SetTimer(SpawnTimer,this, &APlayerCharacter::SpawnHellPod, 5.f, false);
 }
 
 
@@ -419,9 +421,19 @@ void APlayerCharacter::StopThrowMontage()
 	bStartThrowAim = true;
 }
 
-void APlayerCharacter::RespawnPlayer()
+void APlayerCharacter::SpawnHellPod()
 {
-	TeleportTo(RespawnPoint, FRotator::ZeroRotator, false);
+	GetWorld()->SpawnActor<AHellPod>(HellPod, RespawnPoint + FVector(0,0,5000), FRotator::ZeroRotator);
+}
+
+void APlayerCharacter::RespawnPlayer(FVector NewRespawnPoint)
+{
+	FVector Offset = FVector(0, 0, 400.f);
+	FVector FinalPointToSpawn = NewRespawnPoint + Offset;
+
+	GetCharacterMovement()->SetMovementMode(MOVE_None);
+	SetActorLocation(FinalPointToSpawn);
+	
 	SetPlayerToDefault();
 }
 
