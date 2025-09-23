@@ -51,4 +51,13 @@ public:
 	
 protected:
 	bool bIsFalling = true;
+
+	UPROPERTY(EditAnywhere, Category = Settings)
+	TObjectPtr<USoundBase> HitSound;
+	
+	UPROPERTY(EditAnywhere, Category = Settings)
+	TObjectPtr<USoundAttenuation> SoundAttenuation;
+
+	UFUNCTION()
+	void OnSpawnPlayer();
 };

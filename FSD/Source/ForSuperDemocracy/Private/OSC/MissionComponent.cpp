@@ -41,7 +41,7 @@ void UMissionComponent::StartMission()
     // 초기화 및 첫 목표 시작
     if (!MissionData)
     {
-        if(GEngine) GEngine->AddOnScreenDebugMessage(-1, 1.5f, FColor::Green, FString::Printf(TEXT("Mission Data null")));
+        // if(GEngine) GEngine->AddOnScreenDebugMessage(-1, 1.5f, FColor::Green, FString::Printf(TEXT("Mission Data null")));
         return;
     }
     if (!MissionData || MissionData->Objectives.Num() == 0)
@@ -132,7 +132,7 @@ void UMissionComponent::StartObjective(int32 Index)
     CacheObjectiveTargets(Obj);
     OnObjectiveUpdated.Broadcast(Curr, Obj.Target);
     
-    if(GEngine) GEngine->AddOnScreenDebugMessage(-1, 1.5f, FColor::Green, FString::Printf(TEXT("Mission Start! %d , %d, %d"), Obj.Type, Obj.Target, InitialTime));
+    //if(GEngine) GEngine->AddOnScreenDebugMessage(-1, 1.5f, FColor::Green, FString::Printf(TEXT("Mission Start! %d , %d, %d"), Obj.Type, Obj.Target, InitialTime));
 }
 
 void UMissionComponent::CompleteObjective()
@@ -245,7 +245,7 @@ void UMissionComponent::NotifyDestroyed(AActor* Actor)
     {
         CompleteObjective();
     }
-    if(GEngine) GEngine->AddOnScreenDebugMessage(-1, 1.5f, FColor::Green, FString::Printf(TEXT("Destroy! %s , %d / %d"), *Obj.TargetClass->GetName(), Obj.Target, Curr));
+    //if(GEngine) GEngine->AddOnScreenDebugMessage(-1, 1.5f, FColor::Green, FString::Printf(TEXT("Destroy! %s , %d / %d"), *Obj.TargetClass->GetName(), Obj.Target, Curr));
 
 }
 

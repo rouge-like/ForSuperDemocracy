@@ -144,7 +144,7 @@ void UHealthComponent::HandleRadialDamage(AActor* DamagedActor, float Damage, co
 
     OnRagdoll();
     // 데미지 비례 임펄스 적용 (Origin 반대 방향으로 가속 변화)
-    FVector Dir = Mesh->GetComponentLocation() - Origin - FVector(0,0,500.f);
+    FVector Dir = Mesh->GetComponentLocation() - (Origin - FVector(0,0,150.f));
     if (!Dir.IsNearlyZero())
     {
         Dir = Dir.GetSafeNormal();
@@ -247,7 +247,7 @@ void UHealthComponent::OnRagdoll()
             }
             if (USpringArmComponent* SpringArm = Cast<USpringArmComponent>(Char->GetComponentByClass(USpringArmComponent::StaticClass())))
             {
-                SpringArm->TargetOffset *= 2;
+                SpringArm->SocketOffset += FVector(0, 0, 150.f);
             }
         }
 
@@ -280,7 +280,7 @@ void UHealthComponent::RecoverFromRagdoll()
         Mesh = Char->GetMesh();
         if (USpringArmComponent* SpringArm = Cast<USpringArmComponent>(Char->GetComponentByClass(USpringArmComponent::StaticClass())))
         {
-            SpringArm->TargetOffset /= 2;
+            SpringArm->SocketOffset = FVector(0, 50, 20.f);;
         }
     }
     if (!Mesh)

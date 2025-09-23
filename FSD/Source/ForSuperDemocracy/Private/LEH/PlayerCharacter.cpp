@@ -223,6 +223,8 @@ void APlayerCharacter::OnDamaged(float Damage, AActor* DamageCauser, AController
 		DamageWidgetOff();
 		
 	}), 0.7f, false);
+
+	UGameplayStatics::PlaySound2D(GetWorld(), HitSFX);
 }
 
 void APlayerCharacter::DamageWidgetOff()
@@ -428,9 +430,9 @@ void APlayerCharacter::SpawnHellPod()
 
 void APlayerCharacter::RespawnPlayer(FVector NewRespawnPoint)
 {
-	FVector Offset = FVector(0, 0, 400.f);
+	FVector Offset = FVector(0, 0, 100.f);
 	FVector FinalPointToSpawn = NewRespawnPoint + Offset;
-
+	HealthComp->ResetHealth();
 	GetCharacterMovement()->SetMovementMode(MOVE_None);
 	SetActorLocation(FinalPointToSpawn);
 	
@@ -439,7 +441,6 @@ void APlayerCharacter::RespawnPlayer(FVector NewRespawnPoint)
 
 void APlayerCharacter::SetPlayerToDefault()
 {
-	HealthComp->ResetHealth();
 	FSMComp->SetPlayerState(EPlayerState::Idle);
 	GetCharacterMovement()->SetMovementMode(MOVE_Walking);
 	

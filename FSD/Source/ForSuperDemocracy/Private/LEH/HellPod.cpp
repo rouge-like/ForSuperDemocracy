@@ -58,33 +58,35 @@ void AHellPod::BeginPlay()
 void AHellPod::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	FTimerHandle TimerHandle;
-	GetWorldTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda([&]
-	{
-		bIsFalling = false;
-
-		Collision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-
-		// 플레이어를 가져온다,
-		APlayerController* PC = GetWorld()->GetFirstPlayerController();
-		if (PC)
-		{
-			APlayerCharacter* CurrentPawn = Cast<APlayerCharacter>(PC->GetPawn());
-			if (CurrentPawn)
-			{
-				CurrentPawn->RespawnPlayer(GetActorLocation());
-			}
-
-			PC->SetViewTargetWithBlend(CurrentPawn, 1.f);
-		}
-		
-	}), DigInTime, false);
+	OnSpawnPlayer();
+	//FTimerHandle TimerHandle;
+	//GetWorldTimerManager().SetTimer(TimerHandle, this, &AHellPod::OnSpawnPlayer, DigInTime, false);
 
 	UNiagaraFunctionLibrary::SpawnSystemAtLocation(
 		GetWorld(),
 		Smoke,
 		GetActorLocation(),
 		GetActorRotation()
+	);
+
+	UGameplayStatics::SpawnSoundAtLocation(GetWorld(), HitSound, GetActorLocation(), GetActorRotation(), 1,1,0,SoundAttenuation);
+
+	APlayerController* PC = GetWorld()->GetFirstPlayerController();
+	APlayerCharacter* CurrentPawn = Cast<APlayerCharacter>(PC->GetPawn());
+	
+	TArray<AActor*> IgnoreActors;
+	IgnoreActors.Add(CurrentPawn);
+	AController* InstigatorController = GetInstigatorController();
+	UGameplayStatics::ApplyRadialDamage(
+		GetWorld(),
+		1000,
+		GetActorLocation(),
+		750,
+		/*DamageType*/ nullptr,
+		IgnoreActors,
+		/*DamageCauser*/ this,
+		InstigatorController,
+		/*bDoFullDamage*/ true
 	);
 }
 
@@ -96,11 +98,31 @@ void AHellPod::Tick(float DeltaTime)
 	if (bIsFalling)
 	{
 		FVector CurrentLocation = GetActorLocation();
-		float NewZ = CurrentLocation.Z + Speed *DeltaTime * -9.8f;
+		float NewZ = CurrentLocation.Z + Speed * DeltaTime * -9.8f;
 	
-		SetActorLocation(FVector(CurrentLocation.X, CurrentLocation.Y, NewZ));
+		SetActorLocation(FVector(CurrentLocation.X, CurrentLocation.Y, NewZ), true);
 	}
 
 	
+}
+
+void AHellPod::OnSpawnPlayer()
+{
+	bIsFalling = false;
+
+	Collision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	// 플레이어를 가져온다,
+	APlayerController* PC = GetWorld()->GetFirstPlayerController();
+	if (PC)
+	{
+		APlayerCharacter* CurrentPawn = Cast<APlayerCharacter>(PC->GetPawn());
+		if (CurrentPawn)
+		{
+			CurrentPawn->RespawnPlayer(GetActorLocation());
+			//DrawDebugSphere(GetWorld(), GetActorLocation(), 100, 100, FColor::Red, true);
+		}
+		PC->SetViewTargetWithBlend(CurrentPawn, 1.f);
+	}
 }
 

@@ -182,6 +182,9 @@ public:
 	TSubclassOf<class AHellPod> HellPod;
 	UFUNCTION()
 	void SpawnHellPod();
+
+	UPROPERTY(EditDefaultsOnly)
+	class USoundBase* HitSFX;
 public:
 	// Respawn
 	UPROPERTY(EditDefaultsOnly, Category=Respawn)
