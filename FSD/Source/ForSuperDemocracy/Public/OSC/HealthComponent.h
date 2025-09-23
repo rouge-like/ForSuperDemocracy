@@ -111,6 +111,8 @@ protected:
     float PrevGravityScale = 1.0f;
 
     UFUNCTION()
+    void OnRagdoll();
+    UFUNCTION()
     void RecoverFromRagdoll();
 
     // Capsule ↔ Mesh sync while ragdolled (for camera/actor cohesion)

@@ -18,7 +18,7 @@ class FORSUPERDEMOCRACY_API UPlayerAnimInstance : public UAnimInstance
 public:
 	UPlayerAnimInstance();
 	
-	virtual void NativeInitializeAnimation() override;
+	virtual void NativeBeginPlay() override;
 
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 
@@ -26,6 +26,10 @@ public:
 	// Player state
 	UPROPERTY(BlueprintReadOnly)
 	EPlayerState _PlayerState;
+	
+	UPROPERTY(BlueprintReadOnly)
+	UPlayerFSM* PlayerFSM;
+	
 	
 	// 플레이어 속도
     UPROPERTY(BlueprintReadOnly)
@@ -50,6 +54,9 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	bool bStartThrowAim;
 
+	// 피격 애니메이션
+	UPROPERTY(BlueprintReadOnly)
+	bool bDamage;
 public:
 	// Anim montage
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category=PlayerAnim)

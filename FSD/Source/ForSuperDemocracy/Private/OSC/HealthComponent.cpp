@@ -117,7 +117,6 @@ void UHealthComponent::HandleRadialDamage(AActor* DamagedActor, float Damage, co
     {
         return;
     }
-
     USkeletalMeshComponent* Mesh = nullptr;
     if (ACharacter* Char = Cast<ACharacter>(Owner))
     {
@@ -132,8 +131,71 @@ void UHealthComponent::HandleRadialDamage(AActor* DamagedActor, float Damage, co
         return;
     }
 
-    // PhysicsAsset이 없으면 물리 시뮬레이션 불가
-    if (!Mesh->GetPhysicsAsset())
+    OnRagdoll();
+    // 데미지 비례 임펄스 적용 (Origin 반대 방향으로 가속 변화)
+    FVector Dir = Mesh->GetComponentLocation() - Origin - FVector(0,0,500.f);
+    if (!Dir.IsNearlyZero())
+    {
+        Dir = Dir.GetSafeNormal();
+    }
+    const float Strength = Damage * ImpulsePerDamage;
+    Mesh->AddImpulse(Dir * Strength, NAME_None, /*bVelChange*/ true);
+}
+
+void UHealthComponent::UpdateCapsuleFollowRagdoll(float /*DeltaTime*/)
+{
+    AActor* Owner = GetOwner();
+    ACharacter* Char = Owner ? Cast<ACharacter>(Owner) : nullptr;
+    if (!Char)
+    {
+        return;
+    }
+
+    USkeletalMeshComponent* Mesh = Char->GetMesh();
+    UCapsuleComponent* Capsule = Char->GetCapsuleComponent();
+    if (!Mesh || !Capsule)
+    {
+        return;
+    }
+
+    FVector Pelvis = Mesh->GetBoneLocation(RagdollPelvisBoneName, EBoneSpaces::WorldSpace);
+    const float HalfHeight = Capsule->GetUnscaledCapsuleHalfHeight();
+    if (Pelvis.IsNearlyZero())
+    {
+        Pelvis = Mesh->GetSocketLocation(RagdollPelvisBoneName);
+        Pelvis.Z += HalfHeight + 0.5f;
+    }
+    FVector Target = Pelvis;
+    Target.Z -= HalfHeight;
+    Target.Z += RagdollCapsuleFollowZOffset;
+
+    Owner->SetActorLocation(Target, false, nullptr, ETeleportType::TeleportPhysics);
+
+    if (bSyncCapsuleYawToPelvis)
+    {
+        const FRotator PelvisRot = Mesh->GetBoneQuaternion(RagdollPelvisBoneName, EBoneSpaces::WorldSpace).Rotator();
+        const FRotator NewRot(0.f, PelvisRot.Yaw, 0.f);
+        Owner->SetActorRotation(NewRot, ETeleportType::TeleportPhysics);
+    }
+}
+
+void UHealthComponent::OnRagdoll()
+{
+    AActor* Owner = GetOwner();
+    if (!Owner)
+    {
+        return;
+    }
+    USkeletalMeshComponent* Mesh = nullptr;
+    if (ACharacter* Char = Cast<ACharacter>(Owner))
+    {
+        Mesh = Char->GetMesh();
+    }
+    if (!Mesh)
+    {
+        Mesh = Cast<USkeletalMeshComponent>(Owner->GetComponentByClass(USkeletalMeshComponent::StaticClass()));
+    }
+    if (!Mesh)
     {
         return;
     }
@@ -188,56 +250,13 @@ void UHealthComponent::HandleRadialDamage(AActor* DamagedActor, float Damage, co
             GetWorld()->GetTimerManager().SetTimer(Handle, this, &UHealthComponent::RecoverFromRagdoll, RagdollRecoverTime, false);
         }
     }
-
-    // 데미지 비례 임펄스 적용 (Origin 반대 방향으로 가속 변화)
-    FVector Dir = Mesh->GetComponentLocation() - Origin - FVector(0,0,500.f);
-    if (!Dir.IsNearlyZero())
-    {
-        Dir = Dir.GetSafeNormal();
-    }
-    const float Strength = Damage * ImpulsePerDamage;
-    Mesh->AddImpulse(Dir * Strength, NAME_None, /*bVelChange*/ true);
-}
-
-void UHealthComponent::UpdateCapsuleFollowRagdoll(float /*DeltaTime*/)
-{
-    AActor* Owner = GetOwner();
-    ACharacter* Char = Owner ? Cast<ACharacter>(Owner) : nullptr;
-    if (!Char)
-    {
-        return;
-    }
-
-    USkeletalMeshComponent* Mesh = Char->GetMesh();
-    UCapsuleComponent* Capsule = Char->GetCapsuleComponent();
-    if (!Mesh || !Capsule)
-    {
-        return;
-    }
-
-    FVector Pelvis = Mesh->GetBoneLocation(RagdollPelvisBoneName, EBoneSpaces::WorldSpace);
-    const float HalfHeight = Capsule->GetUnscaledCapsuleHalfHeight();
-    if (Pelvis.IsNearlyZero())
-    {
-        Pelvis = Mesh->GetSocketLocation(RagdollPelvisBoneName);
-        Pelvis.Z += HalfHeight + 0.5f;
-    }
-    FVector Target = Pelvis;
-    Target.Z -= HalfHeight;
-    Target.Z += RagdollCapsuleFollowZOffset;
-
-    Owner->SetActorLocation(Target, false, nullptr, ETeleportType::TeleportPhysics);
-
-    if (bSyncCapsuleYawToPelvis)
-    {
-        const FRotator PelvisRot = Mesh->GetBoneQuaternion(RagdollPelvisBoneName, EBoneSpaces::WorldSpace).Rotator();
-        const FRotator NewRot(0.f, PelvisRot.Yaw, 0.f);
-        Owner->SetActorRotation(NewRot, ETeleportType::TeleportPhysics);
-    }
 }
 
 void UHealthComponent::RecoverFromRagdoll()
 {
+    if (CurrentHealth <= 0.f)
+        return;
+    
     AActor* Owner = GetOwner();
     if (!Owner)
     {
@@ -337,6 +356,7 @@ void UHealthComponent::ApplyDamageInternal(float Damage, AActor* DamageCauser, A
     if (CurrentHealth <= 0.f && bCanDie)
     {
         OnDeath.Broadcast(GetOwner());
+        OnRagdoll();
     }
 
 }
@@ -345,4 +365,5 @@ void UHealthComponent::ResetHealth()
 {
     CurrentHealth = MaxHealth;
     OnHealthChanged.Broadcast(MaxHealth, CurrentHealth);
+    RecoverFromRagdoll();
 }

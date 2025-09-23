@@ -45,10 +45,6 @@ void UPlayerFSM::SetPlayerState(EPlayerState NewState)
 	}
 	
 	// 바꾸기 전 상태 저장
-	if (NewState == EPlayerState::Damage && _State == EPlayerState::Damage)
-	{
-		return;
-	}
 
 	PreviousState = _State;
 	_State = NewState;

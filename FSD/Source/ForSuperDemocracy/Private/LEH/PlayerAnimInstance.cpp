@@ -36,20 +36,22 @@ UPlayerAnimInstance::UPlayerAnimInstance()
 	}
 }
 
-void UPlayerAnimInstance::NativeInitializeAnimation()
+void UPlayerAnimInstance::NativeBeginPlay()
 {
-	Super::NativeInitializeAnimation();
+	Super::NativeBeginPlay();
+
+	APawn* Owner = TryGetPawnOwner();
+	PlayerFSM = Owner->FindComponentByClass<UPlayerFSM>();
 }
 
 void UPlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 {
 	Super::NativeUpdateAnimation(DeltaSeconds);
-
+	
 	APawn* Owner = TryGetPawnOwner();
 	if (!Owner) return;
 
 	// FSM 플레이어 스테이트 갱신
-	UPlayerFSM* PlayerFSM = Owner->FindComponentByClass<UPlayerFSM>();
 	if (PlayerFSM)
 	{
 		_PlayerState = PlayerFSM->GetPlayerState();
@@ -77,6 +79,8 @@ void UPlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 
 		// 던질 준비 애니메이션
 		bStartThrowAim = PlayerCharacter->bStartThrowAim;
+
+		bDamage = PlayerCharacter->bDamage;
 	}
 }
 

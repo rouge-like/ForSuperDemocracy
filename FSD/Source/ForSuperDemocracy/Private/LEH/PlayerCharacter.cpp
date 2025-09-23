@@ -84,6 +84,7 @@ void APlayerCharacter::BeginPlay()
 	if (DamageWidgetClass)
 	{
 		DamageWidget = CreateWidget<UDamageWidget>(GetWorld(), DamageWidgetClass);
+		DamageWidget->AddToViewport(-1);
 	}
 }
 
@@ -91,7 +92,7 @@ void APlayerCharacter::BeginPlay()
 void APlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
+	
 	if (bIsZooming)
 	{
 		CurrentLerpAlpha1 = FMath::Clamp(CurrentLerpAlpha1+DeltaTime*LerpSpeed, 0.0f, 1.0f);
@@ -201,24 +202,21 @@ void APlayerCharacter::OnDamaged(float Damage, AActor* DamageCauser, AController
                                  TSubclassOf<UDamageType> DamageType)
 {
 	// Dead 시 OnDamaged 호출 안됨
-	if(IsPlayingDamageAnim)
-	{
-		return;
-	}
+	// if(IsPlayingDamageAnim)
+	// {
+	// 	return;
+	// }
 
-	IsPlayingDamageAnim = true;
+	bDamage  = true;
 	
-	FSMComp->SetPlayerState(EPlayerState::Damage);
-
-	DamageWidget->AddToViewport();
+	//DamageWidget->AddToViewport();
 	DamageWidget->PlayFadeIn();
 
 	GetWorldTimerManager().ClearTimer(WidgetOffHandle);
 	
 	GetWorldTimerManager().SetTimer(DamageTimerHandle, FTimerDelegate::CreateLambda([&]
 	{
-		FSMComp->SetPlayerState(FSMComp->GetPreviousPlayerState());
-		IsPlayingDamageAnim = false;
+		bDamage = false;
 
 		DamageWidgetOff();
 		
@@ -229,24 +227,24 @@ void APlayerCharacter::DamageWidgetOff()
 {
 	DamageWidget->PlayFadeOut();
 	
-	GetWorldTimerManager().SetTimer(WidgetOffHandle, FTimerDelegate::CreateLambda([&]
-	{
-		DamageWidget->RemoveFromParent();
-		
-	}), 0.5f, false);
 }
 
 void APlayerCharacter::OnDeath(AActor* Victim)
 {
-	GetWorldTimerManager().ClearTimer(DamageTimerHandle);
+	if (FSMComp->GetPlayerState() == EPlayerState::Prone)
+	{
+		StartCameraProne(false);
+	}
+	
 	FSMComp->SetPlayerState(EPlayerState::Dead);
 
 	GetCharacterMovement()->SetMovementMode(MOVE_None);
 	
 	FVector DeadPoint = GetActorLocation();
-	FVector RespawnPoint = DeadPoint + RespawnOffset;
-	
-	RespawnPlayer(RespawnPoint);
+	RespawnPoint = DeadPoint + RespawnOffset;
+
+	FTimerHandle SpawnTimer;
+	GetWorldTimerManager().SetTimer(SpawnTimer,this, &APlayerCharacter::RespawnPlayer, 5.f, false);
 }
 
 
@@ -421,7 +419,7 @@ void APlayerCharacter::StopThrowMontage()
 	bStartThrowAim = true;
 }
 
-void APlayerCharacter::RespawnPlayer(FVector RespawnPoint)
+void APlayerCharacter::RespawnPlayer()
 {
 	TeleportTo(RespawnPoint, FRotator::ZeroRotator, false);
 	SetPlayerToDefault();
@@ -433,7 +431,7 @@ void APlayerCharacter::SetPlayerToDefault()
 	FSMComp->SetPlayerState(EPlayerState::Idle);
 	GetCharacterMovement()->SetMovementMode(MOVE_Walking);
 	
-	DamageWidget->RemoveFromParent();
+	// DamageWidget->RemoveFromParent();
 }
 
 
