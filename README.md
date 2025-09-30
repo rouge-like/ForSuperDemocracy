@@ -51,3 +51,6 @@
 - **플레이어 담당**: 캐릭터 FSM/애님, 카메라·입력 파이프라인, HUD 연계, 플레이어 피격 피드백.
 - **적·스폰 담당**: Terminid 데이터·AI·웨이브 시스템, 미션 Kill 연동, 협동 난이도 튜닝.
 - **미션·플로우·전투 담당**: OSC 모듈 설계/구현, 무기·체력 코어, Compass/HUD, 게임 진행 상태 관리.
+
+## 시연 영상
+https://docs.google.com/presentation/d/1qKJbZ-LUJ3QGyPnaGfR_aRzeU9u565JQhcUfK1U2T88/edit?usp=drive_link
